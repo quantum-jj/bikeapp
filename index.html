@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bikes">
 <meta name="theme-color" content="#000000">
-<title>Bike Station Checker</title>
+<title>Bike Checker</title>
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQmlrZSBDaGVja2VyIiwic2hvcnRfbmFtZSI6IkJpa2VzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJ0aGVtZV9jb2xvciI6IiMwMDAwMDAifQ==">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -361,8 +361,17 @@ const PLACE_ICONS = { home: '🏠', office: '🏢', gym: '💪' };
 // ── API ─────────────────────────────────────────────────────
 async function fetchStation(id) {
   try {
-    const r = await fetch(`https://api.tfl.gov.uk/BikePoint/BikePoints_${id}`);
-    if (!r.ok) return null;
+    const url = `https://api.tfl.gov.uk/BikePoint/BikePoints_${id}?_=${Date.now()}`;
+    const r = await fetch(url, {
+      mode: 'cors',
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!r.ok) {
+      console.error(`[Bike] Station ${id}: HTTP ${r.status}`);
+      logError(`Station ${id}: HTTP ${r.status}`);
+      return null;
+    }
     const d = await r.json();
     const get = k => {
       const p = d.additionalProperties?.find(x => x.key === k);
@@ -374,7 +383,11 @@ async function fetchStation(id) {
       empty: get('NbEmptyDocks'),
       total: get('NbDocks'),
     };
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[Bike] Station ${id} fetch failed:`, err.message || err);
+    logError(`Station ${id}: ${err.message || err}`);
+    return null;
+  }
 }
 
 async function fetchGroup(stationIds) {
@@ -450,9 +463,14 @@ function showLoading() {
   return `<div class="loading-container"><div class="spinner"></div><div class="loading-text">Checking stations…</div></div>`;
 }
 
-function showError() {
-  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.<br>Check your connection and try again.</div>`;
+function showError(detail) {
+  const extra = detail ? `<br><span style="font-size:12px;color:var(--text-tertiary);word-break:break-all;">${detail}</span>` : '';
+  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.<br>Check your connection and try again.${extra}</div>`;
 }
+
+// Debug: collect errors so we can display them
+let _fetchErrors = [];
+function logError(msg) { _fetchErrors.push(msg); console.error(msg); }
 
 // ── Navigation ──────────────────────────────────────────────
 function showScreen(id) {
@@ -477,8 +495,9 @@ async function checkLocation(place) {
   const container = document.getElementById('resultsContainer');
   container.innerHTML = showLoading();
 
+  _fetchErrors = [];
   const stations = await fetchGroup(cfg.ids);
-  if (stations.every(s => !s.data)) { container.innerHTML = showError(); return; }
+  if (stations.every(s => !s.data)) { container.innerHTML = showError(_fetchErrors.join('<br>')); return; }
 
   const thresh = THRESHOLDS.location;
   let html = renderTable(stations, cfg.label, thresh, thresh, false);
@@ -503,13 +522,14 @@ async function checkRoute(from, to) {
   const fromCfg = STATIONS[from];
   const toCfg = STATIONS[to];
 
+  _fetchErrors = [];
   const [fromStations, toStations] = await Promise.all([
     fetchGroup(fromCfg.ids),
     fetchGroup(toCfg.ids),
   ]);
 
   if (fromStations.every(s => !s.data) && toStations.every(s => !s.data)) {
-    container.innerHTML = showError(); return;
+    container.innerHTML = showError(_fetchErrors.join('<br>')); return;
   }
 
   const bikeThresh = THRESHOLDS.bikes;
