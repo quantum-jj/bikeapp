@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bikes">
+<meta name="theme-color" content="#000000">
+<title>Bike Checker</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQmlrZSBDaGVja2VyIiwic2hvcnRfbmFtZSI6IkJpa2VzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJ0aGVtZV9jb2xvciI6IiMwMDAwMDAifQ==">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #000000;
+    --bg-card: #1c1c1e;
+    --bg-card-hover: #2c2c2e;
+    --bg-grouped: #1c1c1e;
+    --text-primary: #ffffff;
+    --text-secondary: #8e8e93;
+    --text-tertiary: #636366;
+    --separator: rgba(84,84,88,0.35);
+    --blue: #0a84ff;
+    --green: #30d158;
+    --yellow: #ffd60a;
+    --red: #ff453a;
+    --orange: #ff9f0a;
+    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --radius: 13px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* ── Navigation bar ─────────────────────────── */
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: var(--safe-top) 16px 12px;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .navbar h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+  }
+  .navbar .subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .back-btn {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-size: 17px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 4px;
+  }
+  .back-btn svg { width: 20px; height: 20px; }
+  .back-btn.visible { display: flex; }
+
+  /* ── Content area ───────────────────────────── */
+  .content {
+    padding: 16px 16px calc(16px + var(--safe-bottom));
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* ── Section labels ─────────────────────────── */
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0 16px 8px;
+  }
+
+  /* ── Grouped list (iOS settings style) ──────── */
+  .list-group {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .list-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 0.5px solid var(--separator);
+    text-decoration: none;
+    color: inherit;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item:active { background: var(--bg-card-hover); }
+  .list-item .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .list-item .label {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 400;
+  }
+  .list-item .label .detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+  .list-item .chevron {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ── Results ────────────────────────────────── */
+  .results-section { margin-bottom: 28px; }
+  .results-header {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .results-header .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(255,69,58,0.15);
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .results-table {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-header {
+    display: grid;
+    grid-template-columns: 1fr 52px 52px 52px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .table-header span:not(:first-child) { text-align: center; }
+  .table-row {
+    display: grid;
+    grid-template-columns: 1fr 52px 52px 52px;
+    padding: 13px 14px;
+    align-items: center;
+    border-bottom: 0.5px solid var(--separator);
+    font-size: 15px;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row .station-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
+  }
+  .table-row .val {
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 16px;
+  }
+  .val.good { color: var(--green); }
+  .val.low { color: var(--yellow); }
+  .val.empty { color: var(--red); }
+  .val.muted { color: var(--text-tertiary); font-weight: 400; }
+
+  /* ── Loading ────────────────────────────────── */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    gap: 14px;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--text-tertiary);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 15px; color: var(--text-secondary); }
+
+  /* ── Timestamp ──────────────────────────────── */
+  .timestamp {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    padding: 16px 0 8px;
+  }
+
+  /* ── Legend ──────────────────────────────────── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 0 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Screen transitions ─────────────────────── */
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Error ───────────────────────────────────── */
+  .error-msg {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .error-msg .error-icon { font-size: 40px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <button class="back-btn" id="backBtn" onclick="goHome()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    Back
+  </button>
+  <h1 id="navTitle">🚲 Bikes</h1>
+  <div class="subtitle" id="navSubtitle">Santander Cycles</div>
+</div>
+
+<div class="content">
+
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="homeScreen">
+    <div class="section-label">Check a location</div>
+    <div class="list-group">
+      <div class="list-item" onclick="checkLocation('home')">
+        <div class="icon" style="background:#30d15822">🏠</div>
+        <div class="label">Home<div class="detail">Hoxton</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkLocation('office')">
+        <div class="icon" style="background:#0a84ff22">🏢</div>
+        <div class="label">Office<div class="detail">West End</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkLocation('gym')">
+        <div class="icon" style="background:#ff9f0a22">💪</div>
+        <div class="label">Gym<div class="detail">Shoreditch</div></div>
+        <div class="chevron">›</div>
+      </div>
+    </div>
+
+    <div class="section-label">Check a route</div>
+    <div class="list-group">
+      <div class="list-item" onclick="checkRoute('home','office')">
+        <div class="icon" style="background:#0a84ff22">🗺️</div>
+        <div class="label">Home → Office</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkRoute('office','home')">
+        <div class="icon" style="background:#0a84ff22">🗺️</div>
+        <div class="label">Office → Home</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkRoute('home','gym')">
+        <div class="icon" style="background:#0a84ff22">🗺️</div>
+        <div class="label">Home → Gym</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkRoute('gym','home')">
+        <div class="icon" style="background:#0a84ff22">🗺️</div>
+        <div class="label">Gym → Home</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="list-item" onclick="checkRoute('office','gym')">
+        <div class="icon" style="background:#0a84ff22">🗺️</div>
+        <div class="label">Office → Gym</div>
+        <div class="chevron">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div class="screen" id="resultsScreen">
+    <div id="resultsContainer"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Station config ──────────────────────────────────────────
+const STATIONS = {
+  home:   { label: '🏠 Home — Hoxton',       ids: { 42: 'Wenlock Road',    30: 'Windsor Terrace' }},
+  office: { label: '🏢 Office — West End',    ids: { 83: 'Panton Street',   325: "St. Martin's St", 226: 'Charles II St', 233: 'Pall Mall East' }},
+  gym:    { label: '💪 Gym — Shoreditch',     ids: { 132: 'Bethnal Green Rd', 399: 'Brick Lane Market' }},
+};
+
+const BACKUP = {
+  home:   { label: '🏠 Home backup',          ids: { 63: 'Murray Grove',    351: 'Macclesfield Rd' }},
+  office: { label: '🏢 Office backup',        ids: { 160: 'Waterloo Place', 341: 'Craven Street', 64: 'William IV St', 228: "St. James's Sq" }},
+  gym:    null,
+};
+
+const THRESHOLDS = { bikes: 3, docks_arrive: 5, location: 5 };
+
+const PLACE_NAMES = { home: 'Home', office: 'Office', gym: 'Gym' };
+const PLACE_ICONS = { home: '🏠', office: '🏢', gym: '💪' };
+
+// ── API ─────────────────────────────────────────────────────
+async function fetchStation(id) {
+  try {
+    const r = await fetch(`https://api.tfl.gov.uk/BikePoint/BikePoints_${id}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const get = k => {
+      const p = d.additionalProperties?.find(x => x.key === k);
+      return p ? parseInt(p.value, 10) || 0 : 0;
+    };
+    return {
+      bikes: get('NbStandardBikes'),
+      ebikes: get('NbEBikes'),
+      empty: get('NbEmptyDocks'),
+      total: get('NbDocks'),
+    };
+  } catch { return null; }
+}
+
+async function fetchGroup(stationIds) {
+  const entries = Object.entries(stationIds);
+  const results = await Promise.all(entries.map(([id]) => fetchStation(id)));
+  return entries.map(([id, name], i) => ({ id, name, data: results[i] }));
+}
+
+// ── Rendering ───────────────────────────────────────────────
+function colorClass(val, threshold) {
+  if (val === 0) return 'empty';
+  if (val <= threshold) return 'low';
+  return 'good';
+}
+
+function renderTable(stations, label, bikeThresh, dockThresh, isBackup) {
+  const headerBadge = isBackup ? '<span class="badge">backup</span>' : '';
+  let html = `
+    <div class="results-section">
+      <div class="results-header">${label} ${headerBadge}</div>
+      <div class="results-table">
+        <div class="table-header">
+          <span>Station</span>
+          <span>🚲</span>
+          <span>⚡</span>
+          <span>📍</span>
+        </div>`;
+
+  for (const s of stations) {
+    if (!s.data) {
+      html += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
+      continue;
+    }
+    const bc = colorClass(s.data.bikes, bikeThresh);
+    const dc = colorClass(s.data.empty, dockThresh);
+    html += `
+      <div class="table-row">
+        <div class="station-name">${s.name}</div>
+        <div class="val ${bc}">${s.data.bikes}</div>
+        <div class="val muted">${s.data.ebikes}</div>
+        <div class="val ${dc}">${s.data.empty}</div>
+      </div>`;
+  }
+
+  html += `</div></div>`;
+  return html;
+}
+
+function needsBackup(stations, bikeThresh, dockThresh) {
+  return stations.some(s => {
+    if (!s.data) return true;
+    if (bikeThresh < 900 && s.data.bikes <= bikeThresh) return true;
+    if (dockThresh < 900 && s.data.empty <= dockThresh) return true;
+    return false;
+  });
+}
+
+function renderTimestamp() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const d = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `
+    <div class="legend">
+      <span><span class="legend-dot" style="background:var(--green)"></span> Good</span>
+      <span><span class="legend-dot" style="background:var(--yellow)"></span> Low</span>
+      <span><span class="legend-dot" style="background:var(--red)"></span> Empty</span>
+    </div>
+    <div class="timestamp">Updated ${t} · ${d}</div>
+    <div class="timestamp" style="padding-top:2px">🚲 bikes · ⚡ e-bikes · 📍 empty docks</div>`;
+}
+
+function showLoading() {
+  return `<div class="loading-container"><div class="spinner"></div><div class="loading-text">Checking stations…</div></div>`;
+}
+
+function showError() {
+  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.<br>Check your connection and try again.</div>`;
+}
+
+// ── Navigation ──────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const back = document.getElementById('backBtn');
+  back.classList.toggle('visible', id !== 'homeScreen');
+}
+
+function goHome() {
+  document.getElementById('navTitle').textContent = '🚲 Bikes';
+  document.getElementById('navSubtitle').textContent = 'Santander Cycles';
+  showScreen('homeScreen');
+}
+
+// ── Location check ──────────────────────────────────────────
+async function checkLocation(place) {
+  const cfg = STATIONS[place];
+  document.getElementById('navTitle').textContent = `${PLACE_ICONS[place]} ${PLACE_NAMES[place]}`;
+  document.getElementById('navSubtitle').textContent = '';
+  showScreen('resultsScreen');
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = showLoading();
+
+  const stations = await fetchGroup(cfg.ids);
+  if (stations.every(s => !s.data)) { container.innerHTML = showError(); return; }
+
+  const thresh = THRESHOLDS.location;
+  let html = renderTable(stations, cfg.label, thresh, thresh, false);
+
+  if (needsBackup(stations, thresh, thresh) && BACKUP[place]) {
+    const backupStations = await fetchGroup(BACKUP[place].ids);
+    html += renderTable(backupStations, BACKUP[place].label, thresh, thresh, true);
+  }
+
+  html += renderTimestamp();
+  container.innerHTML = html;
+}
+
+// ── Route check ─────────────────────────────────────────────
+async function checkRoute(from, to) {
+  document.getElementById('navTitle').textContent = `${PLACE_ICONS[from]} → ${PLACE_ICONS[to]}`;
+  document.getElementById('navSubtitle').textContent = `${PLACE_NAMES[from]} to ${PLACE_NAMES[to]}`;
+  showScreen('resultsScreen');
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = showLoading();
+
+  const fromCfg = STATIONS[from];
+  const toCfg = STATIONS[to];
+
+  const [fromStations, toStations] = await Promise.all([
+    fetchGroup(fromCfg.ids),
+    fetchGroup(toCfg.ids),
+  ]);
+
+  if (fromStations.every(s => !s.data) && toStations.every(s => !s.data)) {
+    container.innerHTML = showError(); return;
+  }
+
+  const bikeThresh = THRESHOLDS.bikes;
+  const dockThresh = THRESHOLDS.docks_arrive;
+
+  let html = renderTable(fromStations, `${fromCfg.label} · picking up`, bikeThresh, 999, false);
+  html += renderTable(toStations, `${toCfg.label} · dropping off`, 999, dockThresh, false);
+
+  // Check backups in parallel
+  const fromNeedsBackup = needsBackup(fromStations, bikeThresh, 999);
+  const toNeedsBackup = needsBackup(toStations, 999, dockThresh);
+
+  const [fromBackup, toBackup] = await Promise.all([
+    fromNeedsBackup && BACKUP[from] ? fetchGroup(BACKUP[from].ids) : null,
+    toNeedsBackup && BACKUP[to] ? fetchGroup(BACKUP[to].ids) : null,
+  ]);
+
+  if (fromBackup) {
+    html += renderTable(fromBackup, `${BACKUP[from].label} · pick up`, bikeThresh, 999, true);
+  }
+  if (toBackup) {
+    html += renderTable(toBackup, `${BACKUP[to].label} · drop off`, 999, dockThresh, true);
+  }
+
+  html += renderTimestamp();
+  container.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
