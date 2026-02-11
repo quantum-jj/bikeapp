@@ -231,6 +231,23 @@
     margin-top: 12px; padding: 10px; background: var(--bg-card);
     border-radius: 8px; text-align: left;
   }
+  .retry-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 20px; padding: 12px 28px;
+    background: var(--bg-card); border: 1px solid var(--separator);
+    border-radius: 12px; color: var(--blue); font-size: 15px;
+    font-weight: 600; font-family: inherit; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .retry-btn:active { opacity: 0.7; }
+  .retry-btn:disabled { opacity: 0.3; pointer-events: none; }
+  .retry-countdown {
+    font-size: 13px; color: var(--text-tertiary); margin-top: 8px;
+  }
+  .version-label {
+    text-align: center; font-size: 12px; color: var(--text-tertiary);
+    padding: 32px 0 8px;
+  }
 
   /* ── Settings ────────────────────────────────── */
   .settings-btn {
@@ -383,6 +400,7 @@
     </div>
 
     <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save</button>
+    <div class="version-label">v1.0.0</div>
   </div>
 
 </div>
@@ -559,11 +577,50 @@ function showError(detail) {
   if (detail && (detail.includes('429') || detail.includes('Too Many') || detail.includes('rate')))
     hint = '<br><br>Rate limited — wait a minute, or add a free API key in ⚙️ settings.';
   const extra = detail ? `<div class="error-detail">${detail}</div>` : '';
-  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.${hint}${extra}</div>`;
+  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.${hint}${extra}
+    <button class="retry-btn" id="retryBtn" onclick="retryFetch()">↻ Retry</button>
+    <div class="retry-countdown" id="retryCountdown"></div></div>`;
+}
+
+// ── Retry with progressive backoff ──────────────────────────
+let _retryCount = 0;
+let _retryTimer = null;
+let _lastAction = null; // stores { fn, args } for retry
+
+function setLastAction(fn, args) {
+  _lastAction = { fn, args };
+  _retryCount = 0; // reset backoff on new user action
+}
+
+function retryFetch() {
+  if (!_lastAction) return;
+  const delays = [5, 10, 15, 15]; // progressive backoff in seconds
+  const delay = delays[Math.min(_retryCount, delays.length - 1)];
+  _retryCount++;
+
+  const btn = document.getElementById('retryBtn');
+  const countdown = document.getElementById('retryCountdown');
+  if (btn) btn.disabled = true;
+
+  let remaining = delay;
+  countdown.textContent = `Retrying in ${remaining}s…`;
+
+  clearInterval(_retryTimer);
+  _retryTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(_retryTimer);
+      _cache = { data: null, ts: 0 }; // clear cache before retry
+      _lastAction.fn(..._lastAction.args);
+    } else {
+      countdown.textContent = `Retrying in ${remaining}s…`;
+    }
+  }, 1000);
 }
 
 // ── Location check ──────────────────────────────────────────
 async function checkLocation(place) {
+  setLastAction(checkLocation, [place]);
   document.getElementById('navTitle').textContent = `${PLACE_ICONS[place]} ${PLACE_NAMES[place]}`;
   document.getElementById('navSubtitle').textContent = '';
   pushScreen('resultsScreen');
@@ -622,6 +679,7 @@ function updateRouteUI() {
 
 async function executeRoute() {
   if (!routeFrom || !routeTo) return;
+  setLastAction(executeRoute, []);
   document.getElementById('navTitle').textContent = `${PLACE_ICONS[routeFrom]} → ${PLACE_ICONS[routeTo]}`;
   document.getElementById('navSubtitle').textContent = `${PLACE_NAMES[routeFrom]} to ${PLACE_NAMES[routeTo]}`;
   pushScreen('resultsScreen');
