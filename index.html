@@ -10,284 +10,155 @@
 <title>Bike Checker</title>
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQmlrZSBDaGVja2VyIiwic2hvcnRfbmFtZSI6IkJpa2VzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJ0aGVtZV9jb2xvciI6IiMwMDAwMDAifQ==">
 <style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg:#000; --bg-card:#1c1c1e; --bg-card-hover:#2c2c2e;
+  --text-primary:#fff; --text-secondary:#8e8e93; --text-tertiary:#636366;
+  --separator:rgba(84,84,88,0.35); --blue:#0a84ff; --green:#30d158;
+  --yellow:#ffd60a; --red:#ff453a; --orange:#ff9f0a;
+  --safe-top:env(safe-area-inset-top,20px); --safe-bottom:env(safe-area-inset-bottom,0px); --radius:13px;
+}
+body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',system-ui,sans-serif; background:var(--bg); color:var(--text-primary); min-height:100dvh; -webkit-font-smoothing:antialiased; overscroll-behavior:none; }
+.navbar { position:sticky; top:0; z-index:100; padding:var(--safe-top) 16px 12px; background:rgba(0,0,0,0.72); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px); border-bottom:0.5px solid var(--separator); }
+.navbar h1 { font-size:34px; font-weight:700; letter-spacing:-0.4px; }
+.navbar .subtitle { font-size:15px; color:var(--text-secondary); margin-top:2px; }
+.back-btn { display:none; align-items:center; gap:4px; background:none; border:none; color:var(--blue); font-size:17px; font-family:inherit; cursor:pointer; padding:4px 0; margin-bottom:4px; }
+.back-btn svg { width:20px; height:20px; }
+.back-btn.visible { display:flex; }
+.content { padding:16px 16px calc(16px + var(--safe-bottom)); max-width:500px; margin:0 auto; }
+.section-label { font-size:13px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.02em; padding:0 16px 8px; }
 
-  :root {
-    --bg: #000000;
-    --bg-card: #1c1c1e;
-    --bg-card-hover: #2c2c2e;
-    --text-primary: #ffffff;
-    --text-secondary: #8e8e93;
-    --text-tertiary: #636366;
-    --separator: rgba(84,84,88,0.35);
-    --blue: #0a84ff;
-    --green: #30d158;
-    --yellow: #ffd60a;
-    --red: #ff453a;
-    --orange: #ff9f0a;
-    --safe-top: env(safe-area-inset-top, 20px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --radius: 13px;
-  }
+/* Weather */
+.weather-widget { background:var(--bg-card); border-radius:var(--radius); padding:16px; margin-bottom:12px; cursor:pointer; transition:background 0.15s; -webkit-user-select:none; user-select:none; }
+.weather-widget:active { background:var(--bg-card-hover); }
+.weather-top { display:flex; align-items:center; justify-content:space-between; }
+.weather-temp-group { display:flex; align-items:baseline; gap:6px; }
+.weather-icon { font-size:36px; line-height:1; }
+.weather-temp { font-size:42px; font-weight:300; letter-spacing:-1px; }
+.weather-desc { font-size:15px; color:var(--text-secondary); font-weight:500; }
+.weather-details { display:flex; flex-wrap:wrap; gap:12px 20px; margin-top:10px; font-size:14px; color:var(--text-secondary); }
+.weather-details span { display:flex; align-items:center; gap:4px; }
+.weather-loading { text-align:center; padding:12px 0; font-size:14px; color:var(--text-tertiary); }
+.weather-location { font-size:13px; color:var(--text-tertiary); margin-top:8px; }
+.aqi-badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600; }
+.aqi-good { background:rgba(48,209,88,0.15); color:var(--green); }
+.aqi-fair { background:rgba(255,214,10,0.15); color:var(--yellow); }
+.aqi-moderate { background:rgba(255,159,10,0.15); color:var(--orange); }
+.aqi-poor { background:rgba(255,69,58,0.15); color:var(--red); }
+.aqi-very-poor { background:rgba(255,69,58,0.25); color:var(--red); }
+.weather-alert { background:rgba(255,69,58,0.12); border:1px solid rgba(255,69,58,0.3); border-radius:var(--radius); padding:12px 14px; margin-bottom:12px; display:none; }
+.weather-alert .alert-title { font-size:14px; font-weight:600; color:var(--red); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+.weather-alert .alert-body { font-size:13px; color:var(--text-secondary); line-height:1.4; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text-primary);
-    min-height: 100dvh;
-    -webkit-font-smoothing: antialiased;
-    overscroll-behavior: none;
-  }
+/* Lists */
+.list-group { background:var(--bg-card); border-radius:var(--radius); overflow:hidden; margin-bottom:32px; }
+.list-item { display:flex; align-items:center; gap:14px; padding:12px 16px; cursor:pointer; transition:background 0.15s; border-bottom:0.5px solid var(--separator); text-decoration:none; color:inherit; -webkit-user-select:none; user-select:none; }
+.list-item:last-child { border-bottom:none; }
+.list-item:active { background:var(--bg-card-hover); }
+.list-item .icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.list-item .label { flex:1; font-size:17px; font-weight:400; }
+.list-item .label .detail { font-size:13px; color:var(--text-secondary); margin-top:1px; }
+.list-item .chevron { color:var(--text-tertiary); font-size:14px; font-weight:600; }
 
-  .navbar {
-    position: sticky; top: 0; z-index: 100;
-    padding: var(--safe-top) 16px 12px;
-    background: rgba(0,0,0,0.72);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 0.5px solid var(--separator);
-  }
-  .navbar h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.4px; }
-  .navbar .subtitle { font-size: 15px; color: var(--text-secondary); margin-top: 2px; }
-  .back-btn {
-    display: none; align-items: center; gap: 4px;
-    background: none; border: none; color: var(--blue);
-    font-size: 17px; font-family: inherit; cursor: pointer;
-    padding: 4px 0; margin-bottom: 4px;
-  }
-  .back-btn svg { width: 20px; height: 20px; }
-  .back-btn.visible { display: flex; }
+/* Route picker */
+.route-picker { padding:8px 0; }
+.route-columns { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:start; margin-bottom:24px; }
+.route-col-label { font-size:13px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.02em; text-align:center; margin-bottom:10px; }
+.route-arrow { display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text-tertiary); padding-top:38px; }
+.route-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 12px; background:var(--bg-card); border:2px solid transparent; border-radius:12px; cursor:pointer; font-size:16px; font-weight:500; color:var(--text-primary); font-family:inherit; transition:all 0.2s; width:100%; margin-bottom:8px; -webkit-user-select:none; user-select:none; }
+.route-btn:active { background:var(--bg-card-hover); }
+.route-btn.selected { border-color:var(--blue); background:rgba(10,132,255,0.12); }
+.route-btn.disabled { opacity:0.3; pointer-events:none; }
+.route-btn.hidden { display:none; }
+.route-go-btn { width:100%; padding:16px; background:var(--blue); color:white; border:none; border-radius:14px; font-size:17px; font-weight:600; font-family:inherit; cursor:pointer; transition:opacity 0.2s; }
+.route-go-btn:active { opacity:0.8; }
+.route-go-btn:disabled { opacity:0.3; pointer-events:none; }
 
-  .content {
-    padding: 16px 16px calc(16px + var(--safe-bottom));
-    max-width: 500px; margin: 0 auto;
-  }
+/* Results */
+.results-section { margin-bottom:28px; }
+.results-header { font-size:15px; font-weight:600; color:var(--text-secondary); padding:0 4px 10px; display:flex; align-items:center; gap:6px; }
+.results-header .badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; background:rgba(255,69,58,0.15); color:var(--red); text-transform:uppercase; letter-spacing:0.03em; }
+.results-table { background:var(--bg-card); border-radius:var(--radius); overflow:hidden; }
+.table-header { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:10px 14px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; border-bottom:0.5px solid var(--separator); }
+.table-header span:not(:first-child) { text-align:center; }
+.table-row { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
+.table-row:last-child { border-bottom:none; }
+.table-row .station-name { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
+.table-row .val { text-align:center; font-weight:600; font-variant-numeric:tabular-nums; font-size:16px; }
+.val.good { color:var(--green); } .val.low { color:var(--yellow); } .val.empty { color:var(--red); } .val.muted { color:var(--text-tertiary); font-weight:400; }
 
-  .section-label {
-    font-size: 13px; font-weight: 600; color: var(--text-secondary);
-    text-transform: uppercase; letter-spacing: 0.02em; padding: 0 16px 8px;
-  }
+.loading-container { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 0; gap:14px; }
+.spinner { width:28px; height:28px; border:3px solid var(--text-tertiary); border-top-color:var(--text-primary); border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-text { font-size:15px; color:var(--text-secondary); }
+.timestamp { text-align:center; font-size:13px; color:var(--text-tertiary); padding:16px 0 8px; }
+.legend { display:flex; justify-content:center; gap:16px; padding:8px 0 20px; font-size:12px; color:var(--text-secondary); }
+.legend span { display:flex; align-items:center; gap:4px; }
+.legend-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.screen { display:none; } .screen.active { display:block; animation:fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.error-msg { text-align:center; padding:40px 20px; color:var(--text-secondary); font-size:15px; line-height:1.5; }
+.error-msg .error-icon { font-size:40px; margin-bottom:12px; }
+.error-detail { font-size:12px; color:var(--text-tertiary); word-break:break-all; margin-top:12px; padding:10px; background:var(--bg-card); border-radius:8px; text-align:left; }
+.retry-btn { display:inline-flex; align-items:center; gap:6px; margin-top:20px; padding:12px 28px; background:var(--bg-card); border:1px solid var(--separator); border-radius:12px; color:var(--blue); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; transition:opacity 0.2s; }
+.retry-btn:active { opacity:0.7; } .retry-btn:disabled { opacity:0.3; pointer-events:none; }
+.retry-countdown { font-size:13px; color:var(--text-tertiary); margin-top:8px; }
 
-  /* ── Weather widget ─────────────────────────── */
-  .weather-widget {
-    background: var(--bg-card); border-radius: var(--radius);
-    padding: 16px; margin-bottom: 32px; cursor: pointer;
-    transition: background 0.15s;
-    -webkit-user-select: none; user-select: none;
-  }
-  .weather-widget:active { background: var(--bg-card-hover); }
-  .weather-top {
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .weather-temp-group { display: flex; align-items: baseline; gap: 6px; }
-  .weather-icon { font-size: 36px; line-height: 1; }
-  .weather-temp { font-size: 42px; font-weight: 300; letter-spacing: -1px; }
-  .weather-desc { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
-  .weather-details {
-    display: flex; gap: 20px; margin-top: 10px;
-    font-size: 14px; color: var(--text-secondary);
-  }
-  .weather-details span { display: flex; align-items: center; gap: 4px; }
-  .weather-loading {
-    text-align: center; padding: 12px 0;
-    font-size: 14px; color: var(--text-tertiary);
-  }
-  .weather-location {
-    font-size: 13px; color: var(--text-tertiary); margin-top: 8px;
-  }
+/* Settings */
+.settings-btn { position:absolute; right:16px; top:var(--safe-top); background:none; border:none; color:var(--blue); font-size:22px; cursor:pointer; padding:8px; line-height:1; }
+.settings-field { margin-bottom:24px; }
+.settings-input-row { display:flex; gap:8px; align-items:center; }
+.settings-input { flex:1; padding:12px 14px; background:var(--bg-card); border:1px solid var(--separator); border-radius:10px; color:var(--text-primary); font-size:15px; font-family:inherit; outline:none; }
+.settings-input:focus { border-color:var(--blue); } .settings-input::placeholder { color:var(--text-tertiary); } .settings-input:disabled { color:var(--text-tertiary); opacity:0.7; }
+.settings-select { width:100%; padding:12px 14px; background:var(--bg-card); border:1px solid var(--separator); border-radius:10px; color:var(--text-primary); font-size:15px; font-family:inherit; outline:none; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238e8e93'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; }
+.lock-btn { width:44px; height:44px; flex-shrink:0; background:var(--bg-card); border:1px solid var(--separator); border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.lock-btn:active { background:var(--bg-card-hover); }
+.settings-note { font-size:13px; color:var(--text-tertiary); padding:8px 4px 0; line-height:1.4; }
+.settings-note a { color:var(--blue); text-decoration:none; }
+.save-btn { width:100%; padding:14px; background:var(--blue); color:white; border:none; border-radius:12px; font-size:17px; font-weight:600; font-family:inherit; cursor:pointer; transition:opacity 0.2s; }
+.save-btn:active { opacity:0.8; } .save-btn:disabled { opacity:0.3; pointer-events:none; }
+.version-label { text-align:center; font-size:12px; color:var(--text-tertiary); padding:32px 0 8px; }
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--bg-card); border-radius:var(--radius); margin-bottom:8px; }
+.toggle-row .toggle-label { font-size:16px; }
+.toggle-switch { position:relative; width:51px; height:31px; cursor:pointer; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; inset:0; background:var(--text-tertiary); border-radius:31px; transition:0.2s; }
+.toggle-slider:before { content:''; position:absolute; width:27px; height:27px; left:2px; bottom:2px; background:white; border-radius:50%; transition:0.2s; }
+.toggle-switch input:checked + .toggle-slider { background:var(--green); }
+.toggle-switch input:checked + .toggle-slider:before { transform:translateX(20px); }
+.station-editor { margin-bottom:16px; }
+.station-list-header { display:flex; justify-content:space-between; align-items:center; padding:0 4px 8px; }
+.station-list-header .count { font-size:13px; color:var(--text-tertiary); }
+.station-item { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-card); border-bottom:0.5px solid var(--separator); font-size:15px; }
+.station-item:first-child { border-radius:var(--radius) var(--radius) 0 0; }
+.station-item:last-child { border-radius:0 0 var(--radius) var(--radius); border-bottom:none; }
+.station-item:only-child { border-radius:var(--radius); }
+.station-item .st-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.station-item button { background:none; border:none; font-size:18px; cursor:pointer; padding:4px; color:var(--text-secondary); }
+.station-item button:active { opacity:0.5; }
+.add-station-btn { width:100%; padding:10px; background:var(--bg-card); border:1px dashed var(--separator); border-radius:var(--radius); color:var(--blue); font-size:15px; font-weight:500; font-family:inherit; cursor:pointer; margin-top:8px; }
+.add-station-btn:disabled { opacity:0.3; pointer-events:none; }
 
-  /* ── Grouped list ───────────────────────────── */
-  .list-group {
-    background: var(--bg-card); border-radius: var(--radius);
-    overflow: hidden; margin-bottom: 32px;
-  }
-  .list-item {
-    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
-    cursor: pointer; transition: background 0.15s;
-    border-bottom: 0.5px solid var(--separator);
-    text-decoration: none; color: inherit;
-    -webkit-user-select: none; user-select: none;
-  }
-  .list-item:last-child { border-bottom: none; }
-  .list-item:active { background: var(--bg-card-hover); }
-  .list-item .icon {
-    width: 36px; height: 36px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0;
-  }
-  .list-item .label { flex: 1; font-size: 17px; font-weight: 400; }
-  .list-item .label .detail { font-size: 13px; color: var(--text-secondary); margin-top: 1px; }
-  .list-item .chevron { color: var(--text-tertiary); font-size: 14px; font-weight: 600; }
+/* Station picker modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+.modal-overlay.active { display:flex; }
+.modal-sheet { width:100%; max-width:500px; max-height:75vh; background:var(--bg-card); border-radius:16px 16px 0 0; display:flex; flex-direction:column; padding-bottom:var(--safe-bottom); }
+.modal-header { padding:16px; border-bottom:0.5px solid var(--separator); display:flex; justify-content:space-between; align-items:center; }
+.modal-header h3 { font-size:17px; font-weight:600; }
+.modal-close { background:none; border:none; color:var(--blue); font-size:17px; font-family:inherit; cursor:pointer; }
+.modal-search { padding:8px 16px; }
+.modal-search input { width:100%; padding:10px 12px; background:var(--bg); border:1px solid var(--separator); border-radius:10px; color:var(--text-primary); font-size:15px; font-family:inherit; outline:none; }
+.modal-search input::placeholder { color:var(--text-tertiary); }
+.modal-list { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.modal-group-label { padding:8px 16px 4px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; position:sticky; top:0; background:var(--bg-card); }
+.modal-item { padding:12px 16px; border-bottom:0.5px solid var(--separator); font-size:15px; cursor:pointer; transition:background 0.1s; }
+.modal-item:active { background:var(--bg-card-hover); }
+.modal-item.already-added { color:var(--text-tertiary); pointer-events:none; }
 
-  /* ── Route picker ───────────────────────────── */
-  .route-picker { padding: 8px 0; }
-  .route-columns {
-    display: grid; grid-template-columns: 1fr auto 1fr;
-    gap: 12px; align-items: start; margin-bottom: 24px;
-  }
-  .route-col-label {
-    font-size: 13px; font-weight: 600; color: var(--text-secondary);
-    text-transform: uppercase; letter-spacing: 0.02em;
-    text-align: center; margin-bottom: 10px;
-  }
-  .route-arrow {
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px; color: var(--text-tertiary);
-    padding-top: 38px;
-  }
-  .route-btn {
-    display: flex; align-items: center; justify-content: center;
-    gap: 8px; padding: 14px 12px;
-    background: var(--bg-card); border: 2px solid transparent;
-    border-radius: 12px; cursor: pointer;
-    font-size: 16px; font-weight: 500; color: var(--text-primary);
-    font-family: inherit; transition: all 0.2s;
-    width: 100%; margin-bottom: 8px;
-    -webkit-user-select: none; user-select: none;
-  }
-  .route-btn:active { background: var(--bg-card-hover); }
-  .route-btn.selected { border-color: var(--blue); background: rgba(10,132,255,0.12); }
-  .route-btn.disabled {
-    opacity: 0.3; pointer-events: none;
-  }
-  .route-go-btn {
-    width: 100%; padding: 16px; background: var(--blue); color: white;
-    border: none; border-radius: 14px; font-size: 17px;
-    font-weight: 600; font-family: inherit; cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  .route-go-btn:active { opacity: 0.8; }
-  .route-go-btn:disabled { opacity: 0.3; pointer-events: none; }
-
-  /* ── Results ────────────────────────────────── */
-  .results-section { margin-bottom: 28px; }
-  .results-header {
-    font-size: 15px; font-weight: 600; color: var(--text-secondary);
-    padding: 0 4px 10px; display: flex; align-items: center; gap: 6px;
-  }
-  .results-header .badge {
-    font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;
-    background: rgba(255,69,58,0.15); color: var(--red);
-    text-transform: uppercase; letter-spacing: 0.03em;
-  }
-  .results-table { background: var(--bg-card); border-radius: var(--radius); overflow: hidden; }
-  .table-header {
-    display: grid; grid-template-columns: 1fr 52px 52px 52px;
-    padding: 10px 14px; font-size: 12px; font-weight: 600;
-    color: var(--text-tertiary); text-transform: uppercase;
-    letter-spacing: 0.03em; border-bottom: 0.5px solid var(--separator);
-  }
-  .table-header span:not(:first-child) { text-align: center; }
-  .table-row {
-    display: grid; grid-template-columns: 1fr 52px 52px 52px;
-    padding: 13px 14px; align-items: center;
-    border-bottom: 0.5px solid var(--separator); font-size: 15px;
-  }
-  .table-row:last-child { border-bottom: none; }
-  .table-row .station-name {
-    font-weight: 500; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; padding-right: 8px;
-  }
-  .table-row .val {
-    text-align: center; font-weight: 600;
-    font-variant-numeric: tabular-nums; font-size: 16px;
-  }
-  .val.good { color: var(--green); }
-  .val.low { color: var(--yellow); }
-  .val.empty { color: var(--red); }
-  .val.muted { color: var(--text-tertiary); font-weight: 400; }
-
-  .loading-container {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 60px 0; gap: 14px;
-  }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 3px solid var(--text-tertiary); border-top-color: var(--text-primary);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 15px; color: var(--text-secondary); }
-
-  .timestamp { text-align: center; font-size: 13px; color: var(--text-tertiary); padding: 16px 0 8px; }
-  .legend {
-    display: flex; justify-content: center; gap: 16px;
-    padding: 8px 0 20px; font-size: 12px; color: var(--text-secondary);
-  }
-  .legend span { display: flex; align-items: center; gap: 4px; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-
-  .screen { display: none; }
-  .screen.active { display: block; animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .error-msg {
-    text-align: center; padding: 40px 20px;
-    color: var(--text-secondary); font-size: 15px; line-height: 1.5;
-  }
-  .error-msg .error-icon { font-size: 40px; margin-bottom: 12px; }
-  .error-detail {
-    font-size: 12px; color: var(--text-tertiary); word-break: break-all;
-    margin-top: 12px; padding: 10px; background: var(--bg-card);
-    border-radius: 8px; text-align: left;
-  }
-  .retry-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    margin-top: 20px; padding: 12px 28px;
-    background: var(--bg-card); border: 1px solid var(--separator);
-    border-radius: 12px; color: var(--blue); font-size: 15px;
-    font-weight: 600; font-family: inherit; cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  .retry-btn:active { opacity: 0.7; }
-  .retry-btn:disabled { opacity: 0.3; pointer-events: none; }
-  .retry-countdown {
-    font-size: 13px; color: var(--text-tertiary); margin-top: 8px;
-  }
-  .version-label {
-    text-align: center; font-size: 12px; color: var(--text-tertiary);
-    padding: 32px 0 8px;
-  }
-
-  /* ── Settings ────────────────────────────────── */
-  .settings-btn {
-    position: absolute; right: 16px; top: var(--safe-top);
-    background: none; border: none; color: var(--blue);
-    font-size: 22px; cursor: pointer; padding: 8px; line-height: 1;
-  }
-  .settings-field { margin-bottom: 24px; }
-  .settings-input-row {
-    display: flex; gap: 8px; align-items: center;
-  }
-  .settings-input {
-    flex: 1; padding: 12px 14px; background: var(--bg-card);
-    border: 1px solid var(--separator); border-radius: 10px;
-    color: var(--text-primary); font-size: 15px; font-family: inherit;
-    outline: none;
-  }
-  .settings-input:focus { border-color: var(--blue); }
-  .settings-input::placeholder { color: var(--text-tertiary); }
-  .settings-input:disabled { color: var(--text-tertiary); opacity: 0.7; }
-  .lock-btn {
-    width: 44px; height: 44px; flex-shrink: 0;
-    background: var(--bg-card); border: 1px solid var(--separator);
-    border-radius: 10px; font-size: 20px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .lock-btn:active { background: var(--bg-card-hover); }
-  .settings-note {
-    font-size: 13px; color: var(--text-tertiary);
-    padding: 8px 4px 0; line-height: 1.4;
-  }
-  .settings-note a { color: var(--blue); text-decoration: none; }
-  .save-btn {
-    width: 100%; padding: 14px; background: var(--blue); color: white;
-    border: none; border-radius: 12px; font-size: 17px;
-    font-weight: 600; font-family: inherit; cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  .save-btn:active { opacity: 0.8; }
-  .save-btn:disabled { opacity: 0.3; pointer-events: none; }
+.danger-btn { width:100%; padding:14px; background:transparent; border:1px solid var(--red); border-radius:12px; color:var(--red); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; margin-top:8px; }
+.danger-btn:active { opacity:0.7; }
+.link-row { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-card); border-radius:var(--radius); margin-bottom:8px; cursor:pointer; text-decoration:none; color:var(--blue); font-size:15px; }
+.settings-gap { height:24px; }
 </style>
 </head>
 <body>
@@ -303,51 +174,25 @@
 </div>
 
 <div class="content">
-
-  <!-- HOME SCREEN -->
   <div class="screen active" id="homeScreen">
-
-    <!-- Weather widget -->
     <div class="section-label">Weather</div>
+    <div class="weather-alert" id="weatherAlert"><div class="alert-title">⚠️ <span id="alertTitle"></span></div><div class="alert-body" id="alertBody"></div></div>
     <div class="weather-widget" id="weatherWidget" onclick="window.open('https://www.bbc.com/weather/2643743','_blank')">
       <div class="weather-loading" id="weatherLoading">Loading weather…</div>
       <div id="weatherContent" style="display:none">
-        <div class="weather-top">
-          <div>
-            <div class="weather-temp-group">
-              <span class="weather-icon" id="wIcon"></span>
-              <span class="weather-temp" id="wTemp"></span>
-            </div>
-            <div class="weather-desc" id="wDesc"></div>
-          </div>
-        </div>
+        <div class="weather-top"><div><div class="weather-temp-group"><span class="weather-icon" id="wIcon"></span><span class="weather-temp" id="wTemp"></span></div><div class="weather-desc" id="wDesc"></div></div></div>
         <div class="weather-details">
           <span>🌡️ Feels <span id="wFeels"></span></span>
           <span>💨 <span id="wWind"></span></span>
           <span>💧 <span id="wHumidity"></span></span>
+          <span id="wAqiContainer" style="display:none">🫁 <span id="wAqi" class="aqi-badge"></span></span>
         </div>
-        <div class="weather-location">📍 Hoxton, London · Tap for forecast</div>
+        <div class="weather-location" id="wLocation">📍 Hoxton · Tap for forecast</div>
       </div>
     </div>
 
     <div class="section-label">Check a location</div>
-    <div class="list-group">
-      <div class="list-item" onclick="checkLocation('home')">
-        <div class="icon" style="background:#30d15822">🏠</div>
-        <div class="label">Home<div class="detail">Hoxton</div></div>
-        <div class="chevron">›</div>
-      </div>
-      <div class="list-item" onclick="checkLocation('office')">
-        <div class="icon" style="background:#0a84ff22">🏢</div>
-        <div class="label">Office<div class="detail">West End</div></div>
-        <div class="chevron">›</div>
-      </div>
-      <div class="list-item" onclick="checkLocation('gym')">
-        <div class="icon" style="background:#ff9f0a22">💪</div>
-        <div class="label">Gym<div class="detail">Shoreditch</div></div>
-        <div class="chevron">›</div>
-      </div>
-    </div>
+    <div class="list-group" id="locationList"></div>
 
     <div class="section-label">Check a route</div>
     <div class="list-group">
@@ -359,133 +204,161 @@
     </div>
   </div>
 
-  <!-- ROUTE PICKER SCREEN -->
   <div class="screen" id="routeScreen">
     <div class="route-picker">
       <div class="route-columns">
-        <div>
-          <div class="route-col-label">From</div>
-          <button class="route-btn" data-dir="from" data-place="home" onclick="pickRoute(this)">🏠 Home</button>
-          <button class="route-btn" data-dir="from" data-place="office" onclick="pickRoute(this)">🏢 Office</button>
-          <button class="route-btn" data-dir="from" data-place="gym" onclick="pickRoute(this)">💪 Gym</button>
-        </div>
+        <div id="routeFromCol"></div>
         <div class="route-arrow">→</div>
-        <div>
-          <div class="route-col-label">To</div>
-          <button class="route-btn" data-dir="to" data-place="home" onclick="pickRoute(this)">🏠 Home</button>
-          <button class="route-btn" data-dir="to" data-place="office" onclick="pickRoute(this)">🏢 Office</button>
-          <button class="route-btn" data-dir="to" data-place="gym" onclick="pickRoute(this)">💪 Gym</button>
-        </div>
+        <div id="routeToCol"></div>
       </div>
       <button class="route-go-btn" id="routeGoBtn" disabled onclick="executeRoute()">Check Route</button>
     </div>
   </div>
 
-  <!-- RESULTS SCREEN -->
-  <div class="screen" id="resultsScreen">
-    <div id="resultsContainer"></div>
+  <div class="screen" id="resultsScreen"><div id="resultsContainer"></div></div>
+
+  <div class="screen" id="settingsScreen"><div id="settingsContainer"></div></div>
+</div>
+
+<!-- Station picker modal -->
+<div class="modal-overlay" id="stationModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><h3 id="modalTitle">Add Station</h3><button class="modal-close" onclick="closeStationModal()">Done</button></div>
+    <div class="modal-search"><input type="text" id="modalSearch" placeholder="Search stations…" oninput="filterModalList()"></div>
+    <div class="modal-list" id="modalList"></div>
   </div>
-
-  <!-- SETTINGS SCREEN -->
-  <div class="screen" id="settingsScreen">
-    <div class="settings-field">
-      <div class="section-label">TfL API Key</div>
-      <div class="settings-input-row">
-        <input type="text" class="settings-input" id="tflKeyInput" placeholder="Paste your TfL API key">
-        <button class="lock-btn" id="tflLockBtn" onclick="toggleLock('tfl')" style="display:none">🔒</button>
-      </div>
-      <div class="settings-note">
-        Free from <a href="https://api-portal.tfl.gov.uk/" target="_blank">api-portal.tfl.gov.uk</a> — raises rate limit 50 → 500 req/min.
-      </div>
-    </div>
-
-    <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save</button>
-    <div class="version-label">v1.0.0</div>
-  </div>
-
 </div>
 
 <script>
-// ── Station config ──────────────────────────────────────────
-const STATIONS = {
-  home:   { label: '🏠 Home — Hoxton',       ids: { 42: 'Wenlock Road',    30: 'Windsor Terrace' }},
-  office: { label: '🏢 Office — West End',    ids: { 83: 'Panton Street',   325: "St. Martin's St", 226: 'Charles II St', 233: 'Pall Mall East' }},
-  gym:    { label: '💪 Gym — Shoreditch',     ids: { 132: 'Bethnal Green Rd', 399: 'Brick Lane Market' }},
+// ─── VERSION ────────────────────────────────────────────────
+const APP_VERSION = 'v1.1.0';
+
+// ─── DEFAULTS ───────────────────────────────────────────────
+const DEFAULTS = {
+  stations: {
+    home:   { primary: [['42','Wenlock Road, Hoxton'],['30','Windsor Terrace, Hoxton']], backup: [['63','Murray Grove, Hoxton'],['351','Macclesfield Rd, St Lukes']] },
+    office: { primary: [['83','Panton Street, West End'],['325',"St. Martin's Street, West End"],['226','Charles II Street, West End'],['233','Pall Mall East, West End']], backup: [['160','Waterloo Place, St. James\'s'],['341','Craven Street, Strand'],['64','William IV Street, Strand'],['228','St. James\'s Square, St. James\'s']] },
+    gym:    { primary: [['132','Bethnal Green Road, Shoreditch'],['399','Brick Lane Market, Shoreditch']], backup: [] },
+  },
+  weatherLocation: 'hoxton',
+  showGym: true,
+  tflKey: '',
 };
-const BACKUP = {
-  home:   { label: '🏠 Home backup',          ids: { 63: 'Murray Grove',    351: 'Macclesfield Rd' }},
-  office: { label: '🏢 Office backup',        ids: { 160: 'Waterloo Place', 341: 'Craven Street', 64: 'William IV St', 228: "St. James's Sq" }},
-  gym:    null,
+
+const PLACE_ICONS = { home:'🏠', office:'🏢', gym:'💪' };
+const PLACE_LABELS = { home:'Home', office:'Office', gym:'Gym' };
+const THRESHOLDS = { bikes:3, docks_arrive:5, location:5 };
+
+const WEATHER_LOCATIONS = [
+  { id:'hoxton', name:'Hoxton', lat:51.531, lon:-0.083 },
+  { id:'shoreditch', name:'Shoreditch', lat:51.526, lon:-0.077 },
+  { id:'soho', name:'Soho', lat:51.513, lon:-0.136 },
+  { id:'west-end', name:'West End', lat:51.511, lon:-0.128 },
+  { id:'kings-cross', name:'King\'s Cross', lat:51.531, lon:-0.124 },
+  { id:'angel', name:'Angel', lat:51.532, lon:-0.106 },
+  { id:'clerkenwell', name:'Clerkenwell', lat:51.523, lon:-0.105 },
+  { id:'bloomsbury', name:'Bloomsbury', lat:51.523, lon:-0.128 },
+  { id:'covent-garden', name:'Covent Garden', lat:51.512, lon:-0.123 },
+  { id:'bankside', name:'Bankside', lat:51.507, lon:-0.098 },
+  { id:'canary-wharf', name:'Canary Wharf', lat:51.505, lon:-0.024 },
+  { id:'greenwich', name:'Greenwich', lat:51.477, lon:-0.001 },
+  { id:'hackney', name:'Hackney', lat:51.545, lon:-0.055 },
+  { id:'islington', name:'Islington', lat:51.536, lon:-0.103 },
+  { id:'camden', name:'Camden', lat:51.539, lon:-0.143 },
+  { id:'southwark', name:'Southwark', lat:51.502, lon:-0.104 },
+  { id:'lambeth', name:'Lambeth', lat:51.490, lon:-0.117 },
+  { id:'chelsea', name:'Chelsea', lat:51.487, lon:-0.168 },
+  { id:'kensington', name:'Kensington', lat:51.501, lon:-0.192 },
+  { id:'westminster', name:'Westminster', lat:51.499, lon:-0.135 },
+];
+
+// WMO weather codes
+const WMO = {
+  0:['☀️','Clear sky'],1:['🌤️','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+  45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Heavy drizzle'],
+  61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],66:['🌧️','Freezing rain'],67:['🌧️','Heavy freezing rain'],
+  71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['🌨️','Heavy snow'],77:['🌨️','Snow grains'],
+  80:['🌦️','Light showers'],81:['🌧️','Showers'],82:['🌧️','Heavy showers'],85:['🌨️','Snow showers'],86:['🌨️','Heavy snow showers'],
+  95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm + hail'],99:['⛈️','Severe thunderstorm'],
 };
-const ALL_IDS = new Set();
-for (const p of Object.values(STATIONS)) Object.keys(p.ids).forEach(id => ALL_IDS.add(id));
-for (const p of Object.values(BACKUP)) { if (p) Object.keys(p.ids).forEach(id => ALL_IDS.add(id)); }
 
-const THRESHOLDS = { bikes: 3, docks_arrive: 5, location: 5 };
-const PLACE_NAMES = { home: 'Home', office: 'Office', gym: 'Gym' };
-const PLACE_ICONS = { home: '🏠', office: '🏢', gym: '💪' };
+// ─── STATE (loaded from localStorage or defaults) ───────────
+let config = loadConfig();
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem('bike_config');
+    if (raw) { const c = JSON.parse(raw); return { ...DEFAULTS, ...c }; }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveConfig() { try { localStorage.setItem('bike_config', JSON.stringify(config)); } catch(e) {} }
 
-// ── Settings / API keys ─────────────────────────────────────
-let tflKey = '';
-try { tflKey = localStorage.getItem('tfl_api_key') || ''; } catch(e) {}
+// ─── BIKE STATION CACHE (for the full TfL list) ────────────
+let _allStationsCache = { data:null, ts:0 }; // full list from TfL for station picker
+let _bikeCache = { data:null, ts:0 }; // bike availability cache
 
-// ── Navigation stack ────────────────────────────────────────
+function getAllStationIds() {
+  const ids = new Set();
+  for (const place of Object.values(config.stations)) {
+    place.primary.forEach(s => ids.add(s[0]));
+    place.backup.forEach(s => ids.add(s[0]));
+  }
+  return ids;
+}
+
+async function fetchBikeData() {
+  const now = Date.now();
+  if (_bikeCache.data && (now - _bikeCache.ts) < 30000) return _bikeCache.data;
+  const keyParam = config.tflKey ? `?app_key=${encodeURIComponent(config.tflKey)}` : '';
+  const r = await fetch(`https://api.tfl.gov.uk/BikePoint${keyParam}`, { mode:'cors', cache:'no-store', headers:{'Accept':'application/json'} });
+  if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+  const allData = await r.json();
+  // Cache full station list for picker
+  _allStationsCache = { data:allData, ts:now };
+  const myIds = getAllStationIds();
+  const indexed = {};
+  for (const station of allData) {
+    const id = station.id.split('_')[1];
+    if (!myIds.has(id)) continue;
+    const get = k => { const p = station.additionalProperties?.find(x => x.key === k); return p ? parseInt(p.value,10)||0 : 0; };
+    indexed[id] = { bikes:get('NbStandardBikes'), ebikes:get('NbEBikes'), empty:get('NbEmptyDocks'), total:get('NbDocks') };
+  }
+  _bikeCache = { data:indexed, ts:now };
+  return indexed;
+}
+
+function getGroup(all, stationList) {
+  return stationList.map(([id,name]) => ({ id, name:name.split(',')[0], data:all[id]||null }));
+}
+
+// ─── NAVIGATION ─────────────────────────────────────────────
 let navStack = ['homeScreen'];
-
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('backBtn').classList.toggle('visible', id !== 'homeScreen');
   document.getElementById('settingsBtn').style.display = id === 'homeScreen' ? '' : 'none';
 }
-
-function pushScreen(id) {
-  navStack.push(id);
-  showScreen(id);
-}
-
+function pushScreen(id) { navStack.push(id); showScreen(id); }
 function goBack() {
   if (navStack.length > 1) navStack.pop();
-  const prev = navStack[navStack.length - 1];
+  const prev = navStack[navStack.length-1];
   showScreen(prev);
-  if (prev === 'homeScreen') {
-    document.getElementById('navTitle').textContent = '🚲 Bikes';
-    document.getElementById('navSubtitle').textContent = 'Santander Cycles';
-  } else if (prev === 'routeScreen') {
-    document.getElementById('navTitle').textContent = '🗺️ Plan Route';
-    document.getElementById('navSubtitle').textContent = 'Pick start & destination';
-  }
+  if (prev === 'homeScreen') { document.getElementById('navTitle').textContent = '🚲 Bikes'; document.getElementById('navSubtitle').textContent = 'Santander Cycles'; renderHome(); }
+  else if (prev === 'routeScreen') { document.getElementById('navTitle').textContent = '🗺️ Plan Route'; document.getElementById('navSubtitle').textContent = 'Pick start & destination'; }
 }
+function goHome() { navStack = ['homeScreen']; document.getElementById('navTitle').textContent = '🚲 Bikes'; document.getElementById('navSubtitle').textContent = 'Santander Cycles'; showScreen('homeScreen'); renderHome(); }
 
-function goHome() {
-  navStack = ['homeScreen'];
-  document.getElementById('navTitle').textContent = '🚲 Bikes';
-  document.getElementById('navSubtitle').textContent = 'Santander Cycles';
-  showScreen('homeScreen');
-}
-
-// ── Weather (Open-Meteo, no key needed) ─────────────────────
-const WMO_CODES = {
-  0: ['☀️','Clear sky'], 1: ['🌤️','Mainly clear'], 2: ['⛅','Partly cloudy'], 3: ['☁️','Overcast'],
-  45: ['🌫️','Fog'], 48: ['🌫️','Rime fog'],
-  51: ['🌦️','Light drizzle'], 53: ['🌦️','Drizzle'], 55: ['🌧️','Heavy drizzle'],
-  61: ['🌧️','Light rain'], 63: ['🌧️','Rain'], 65: ['🌧️','Heavy rain'],
-  66: ['🌧️','Freezing rain'], 67: ['🌧️','Heavy freezing rain'],
-  71: ['🌨️','Light snow'], 73: ['🌨️','Snow'], 75: ['🌨️','Heavy snow'],
-  77: ['🌨️','Snow grains'],
-  80: ['🌦️','Light showers'], 81: ['🌧️','Showers'], 82: ['🌧️','Heavy showers'],
-  85: ['🌨️','Snow showers'], 86: ['🌨️','Heavy snow showers'],
-  95: ['⛈️','Thunderstorm'], 96: ['⛈️','Thunderstorm + hail'], 99: ['⛈️','Severe thunderstorm'],
-};
-
+// ─── WEATHER + AQI ──────────────────────────────────────────
 async function loadWeather() {
   try {
-    // Hoxton coordinates
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=51.531&longitude=-0.083&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&wind_speed_unit=mph&timezone=Europe%2FLondon';
-    const r = await fetch(url);
-    const d = await r.json();
-    const c = d.current;
-    const [icon, desc] = WMO_CODES[c.weather_code] || ['🌡️', 'Unknown'];
+    const loc = WEATHER_LOCATIONS.find(l => l.id === config.weatherLocation) || WEATHER_LOCATIONS[0];
+    const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m&wind_speed_unit=mph&timezone=Europe%2FLondon`;
+    const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=european_aqi`;
+    const [wRes, aqiRes] = await Promise.all([fetch(wUrl), fetch(aqiUrl).catch(()=>null)]);
+    const wd = await wRes.json();
+    const c = wd.current;
+    const [icon, desc] = WMO[c.weather_code] || ['🌡️','Unknown'];
 
     document.getElementById('wIcon').textContent = icon;
     document.getElementById('wTemp').textContent = `${Math.round(c.temperature_2m)}°`;
@@ -493,268 +366,390 @@ async function loadWeather() {
     document.getElementById('wFeels').textContent = `${Math.round(c.apparent_temperature)}°`;
     document.getElementById('wWind').textContent = `${Math.round(c.wind_speed_10m)} mph`;
     document.getElementById('wHumidity').textContent = `${c.relative_humidity_2m}%`;
-
+    document.getElementById('wLocation').textContent = `📍 ${loc.name} · Tap for forecast`;
     document.getElementById('weatherLoading').style.display = 'none';
     document.getElementById('weatherContent').style.display = 'block';
+
+    // AQI
+    if (aqiRes && aqiRes.ok) {
+      const aqiData = await aqiRes.json();
+      const aqi = aqiData.current?.european_aqi;
+      if (aqi != null) {
+        const el = document.getElementById('wAqi');
+        let label, cls;
+        if (aqi <= 20) { label='Good'; cls='aqi-good'; }
+        else if (aqi <= 40) { label='Fair'; cls='aqi-fair'; }
+        else if (aqi <= 60) { label='Moderate'; cls='aqi-moderate'; }
+        else if (aqi <= 80) { label='Poor'; cls='aqi-poor'; }
+        else { label='Very Poor'; cls='aqi-very-poor'; }
+        el.textContent = `AQI ${aqi} · ${label}`;
+        el.className = `aqi-badge ${cls}`;
+        document.getElementById('wAqiContainer').style.display = '';
+      }
+    }
+
+    // Severe weather alerts
+    const alerts = [];
+    const feelsLike = c.apparent_temperature;
+    const windGusts = c.wind_gusts_10m || c.wind_speed_10m;
+    const code = c.weather_code;
+    if (feelsLike < 0) alerts.push(`🥶 Feels like ${Math.round(feelsLike)}°C — wrap up warm`);
+    if (feelsLike > 32) alerts.push(`🔥 Feels like ${Math.round(feelsLike)}°C — stay hydrated`);
+    if (windGusts > 40) alerts.push(`🌬️ Wind gusts up to ${Math.round(windGusts)} mph`);
+    if ([65,67,82,95,96,99].includes(code)) alerts.push(`${icon} ${desc} — consider alternatives`);
+
+    const alertEl = document.getElementById('weatherAlert');
+    if (alerts.length > 0) {
+      document.getElementById('alertTitle').textContent = 'Weather Warning';
+      document.getElementById('alertBody').textContent = alerts.join(' · ');
+      alertEl.style.display = 'block';
+    } else {
+      alertEl.style.display = 'none';
+    }
   } catch(e) {
     document.getElementById('weatherLoading').textContent = 'Weather unavailable';
   }
 }
 
-// ── Bike API (single bulk fetch, 30s cache) ─────────────────
-let _cache = { data: null, ts: 0 };
-
-async function fetchAllStations() {
-  const now = Date.now();
-  if (_cache.data && (now - _cache.ts) < 30000) return _cache.data;
-
-  const keyParam = tflKey ? `?app_key=${encodeURIComponent(tflKey)}` : '';
-  const r = await fetch(`https://api.tfl.gov.uk/BikePoint${keyParam}`, {
-    mode: 'cors', cache: 'no-store', headers: { 'Accept': 'application/json' },
-  });
-  if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-
-  const allData = await r.json();
-  const indexed = {};
-  for (const station of allData) {
-    const id = station.id.split('_')[1];
-    if (!ALL_IDS.has(id)) continue;
-    const get = k => {
-      const p = station.additionalProperties?.find(x => x.key === k);
-      return p ? parseInt(p.value, 10) || 0 : 0;
-    };
-    indexed[id] = { bikes: get('NbStandardBikes'), ebikes: get('NbEBikes'), empty: get('NbEmptyDocks'), total: get('NbDocks') };
+// ─── RENDER HOME ────────────────────────────────────────────
+function renderHome() {
+  const list = document.getElementById('locationList');
+  let h = '';
+  const places = config.showGym ? ['home','office','gym'] : ['home','office'];
+  const colors = { home:'#30d15822', office:'#0a84ff22', gym:'#ff9f0a22' };
+  for (const p of places) {
+    h += `<div class="list-item" onclick="checkLocation('${p}')"><div class="icon" style="background:${colors[p]}">${PLACE_ICONS[p]}</div><div class="label">${PLACE_LABELS[p]}</div><div class="chevron">›</div></div>`;
   }
-  _cache = { data: indexed, ts: now };
-  return indexed;
+  list.innerHTML = h;
 }
 
-function getGroup(all, ids) {
-  return Object.entries(ids).map(([id, name]) => ({ id, name, data: all[id] || null }));
-}
-
-// ── Rendering ───────────────────────────────────────────────
-function colorClass(v, t) { return v === 0 ? 'empty' : v <= t ? 'low' : 'good'; }
-
+// ─── RENDER RESULTS ─────────────────────────────────────────
+function colorClass(v,t) { return v===0?'empty':v<=t?'low':'good'; }
 function renderTable(stations, label, bt, dt, isBackup) {
   const badge = isBackup ? ' <span class="badge">backup</span>' : '';
-  let h = `<div class="results-section"><div class="results-header">${label}${badge}</div>
-    <div class="results-table"><div class="table-header">
-      <span>Station</span><span>🚲</span><span>⚡</span><span>📍</span></div>`;
+  let h = `<div class="results-section"><div class="results-header">${label}${badge}</div><div class="results-table"><div class="table-header"><span>Station</span><span>🚲</span><span>⚡</span><span>📍</span></div>`;
   for (const s of stations) {
-    if (!s.data) {
-      h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
-    } else {
-      h += `<div class="table-row"><div class="station-name">${s.name}</div>
-        <div class="val ${colorClass(s.data.bikes, bt)}">${s.data.bikes}</div>
-        <div class="val muted">${s.data.ebikes}</div>
-        <div class="val ${colorClass(s.data.empty, dt)}">${s.data.empty}</div></div>`;
-    }
+    if (!s.data) h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
+    else h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val ${colorClass(s.data.bikes,bt)}">${s.data.bikes}</div><div class="val muted">${s.data.ebikes}</div><div class="val ${colorClass(s.data.empty,dt)}">${s.data.empty}</div></div>`;
   }
   return h + '</div></div>';
 }
-
-function needsBackup(stations, bt, dt) {
-  return stations.some(s => !s.data || (bt < 900 && s.data.bikes <= bt) || (dt < 900 && s.data.empty <= dt));
-}
-
+function needsBackup(stations,bt,dt) { return stations.some(s => !s.data||(bt<900&&s.data.bikes<=bt)||(dt<900&&s.data.empty<=dt)); }
 function renderFooter() {
   const n = new Date();
-  return `<div class="legend">
-    <span><span class="legend-dot" style="background:var(--green)"></span> Good</span>
-    <span><span class="legend-dot" style="background:var(--yellow)"></span> Low</span>
-    <span><span class="legend-dot" style="background:var(--red)"></span> Empty</span></div>
-    <div class="timestamp">Updated ${n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} · ${n.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
-    <div class="timestamp" style="padding-top:2px">🚲 bikes · ⚡ e-bikes · 📍 empty docks</div>`;
+  return `<div class="legend"><span><span class="legend-dot" style="background:var(--green)"></span> Good</span><span><span class="legend-dot" style="background:var(--yellow)"></span> Low</span><span><span class="legend-dot" style="background:var(--red)"></span> Empty</span></div><div class="timestamp">Updated ${n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} · ${n.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})}</div><div class="timestamp" style="padding-top:2px">🚲 bikes · ⚡ e-bikes · 📍 empty docks</div>`;
 }
-
-function showLoading() {
-  return '<div class="loading-container"><div class="spinner"></div><div class="loading-text">Checking stations…</div></div>';
-}
-
+function showLoading() { return '<div class="loading-container"><div class="spinner"></div><div class="loading-text">Checking stations…</div></div>'; }
 function showError(detail) {
   let hint = '';
-  if (detail && (detail.includes('429') || detail.includes('Too Many') || detail.includes('rate')))
-    hint = '<br><br>Rate limited — wait a minute, or add a free API key in ⚙️ settings.';
+  if (detail && (detail.includes('429')||detail.includes('Too Many')||detail.includes('rate'))) hint='<br><br>Rate limited — wait a minute, or add a free API key in ⚙️ settings.';
   const extra = detail ? `<div class="error-detail">${detail}</div>` : '';
-  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.${hint}${extra}
-    <button class="retry-btn" id="retryBtn" onclick="retryFetch()">↻ Retry</button>
-    <div class="retry-countdown" id="retryCountdown"></div></div>`;
+  return `<div class="error-msg"><div class="error-icon">📡</div>Couldn't reach the TfL API.${hint}${extra}<button class="retry-btn" id="retryBtn" onclick="retryFetch()">↻ Retry</button><div class="retry-countdown" id="retryCountdown"></div></div>`;
 }
 
-// ── Retry with progressive backoff ──────────────────────────
-let _retryCount = 0;
-let _retryTimer = null;
-let _lastAction = null; // stores { fn, args } for retry
-
-function setLastAction(fn, args) {
-  _lastAction = { fn, args };
-  _retryCount = 0; // reset backoff on new user action
-}
-
+// ─── RETRY ──────────────────────────────────────────────────
+let _retryCount=0, _retryTimer=null, _lastAction=null;
+function setLastAction(fn,args) { _lastAction={fn,args}; _retryCount=0; }
 function retryFetch() {
   if (!_lastAction) return;
-  const delays = [5, 10, 15, 15]; // progressive backoff in seconds
-  const delay = delays[Math.min(_retryCount, delays.length - 1)];
-  _retryCount++;
-
-  const btn = document.getElementById('retryBtn');
-  const countdown = document.getElementById('retryCountdown');
-  if (btn) btn.disabled = true;
-
-  let remaining = delay;
-  countdown.textContent = `Retrying in ${remaining}s…`;
-
+  const delays=[5,10,15,15]; const delay=delays[Math.min(_retryCount,delays.length-1)]; _retryCount++;
+  const btn=document.getElementById('retryBtn'); const cd=document.getElementById('retryCountdown');
+  if(btn) btn.disabled=true; let rem=delay; cd.textContent=`Retrying in ${rem}s…`;
   clearInterval(_retryTimer);
-  _retryTimer = setInterval(() => {
-    remaining--;
-    if (remaining <= 0) {
-      clearInterval(_retryTimer);
-      _cache = { data: null, ts: 0 }; // clear cache before retry
-      _lastAction.fn(..._lastAction.args);
-    } else {
-      countdown.textContent = `Retrying in ${remaining}s…`;
-    }
-  }, 1000);
+  _retryTimer=setInterval(()=>{ rem--; if(rem<=0){clearInterval(_retryTimer);_bikeCache={data:null,ts:0};_lastAction.fn(..._lastAction.args);} else cd.textContent=`Retrying in ${rem}s…`; },1000);
 }
 
-// ── Location check ──────────────────────────────────────────
+// ─── LOCATION CHECK ─────────────────────────────────────────
 async function checkLocation(place) {
-  setLastAction(checkLocation, [place]);
-  document.getElementById('navTitle').textContent = `${PLACE_ICONS[place]} ${PLACE_NAMES[place]}`;
+  setLastAction(checkLocation,[place]);
+  document.getElementById('navTitle').textContent = `${PLACE_ICONS[place]} ${PLACE_LABELS[place]}`;
   document.getElementById('navSubtitle').textContent = '';
   pushScreen('resultsScreen');
-  const c = document.getElementById('resultsContainer');
-  c.innerHTML = showLoading();
+  const c = document.getElementById('resultsContainer'); c.innerHTML = showLoading();
   try {
-    const all = await fetchAllStations();
-    const st = getGroup(all, STATIONS[place].ids);
-    if (st.every(s => !s.data)) { c.innerHTML = showError('No data for these stations'); return; }
-    const t = THRESHOLDS.location;
-    let h = renderTable(st, STATIONS[place].label, t, t, false);
-    if (needsBackup(st, t, t) && BACKUP[place])
-      h += renderTable(getGroup(all, BACKUP[place].ids), BACKUP[place].label, t, t, true);
+    const all = await fetchBikeData();
+    const cfg = config.stations[place];
+    const st = getGroup(all, cfg.primary);
+    if (st.every(s=>!s.data)) { c.innerHTML=showError('No data for these stations'); return; }
+    const t=THRESHOLDS.location;
+    let h = renderTable(st, `${PLACE_ICONS[place]} ${PLACE_LABELS[place]}`, t, t, false);
+    if (needsBackup(st,t,t) && cfg.backup.length)
+      h += renderTable(getGroup(all,cfg.backup), `${PLACE_ICONS[place]} ${PLACE_LABELS[place]} backup`, t, t, true);
     c.innerHTML = h + renderFooter();
-  } catch(e) { c.innerHTML = showError(e.message); }
+  } catch(e) { c.innerHTML=showError(e.message); }
 }
 
-// ── Route picker ────────────────────────────────────────────
-let routeFrom = null, routeTo = null;
-
+// ─── ROUTE PICKER ───────────────────────────────────────────
+let routeFrom=null, routeTo=null;
 function showRoutePicker() {
-  routeFrom = null; routeTo = null;
-  document.getElementById('navTitle').textContent = '🗺️ Plan Route';
-  document.getElementById('navSubtitle').textContent = 'Pick start & destination';
+  routeFrom=null; routeTo=null;
+  document.getElementById('navTitle').textContent='🗺️ Plan Route';
+  document.getElementById('navSubtitle').textContent='Pick start & destination';
+  renderRouteButtons(); updateRouteUI(); pushScreen('routeScreen');
+}
+function renderRouteButtons() {
+  const places = config.showGym ? ['home','office','gym'] : ['home','office'];
+  let fh = '<div class="route-col-label">From</div>';
+  let th = '<div class="route-col-label">To</div>';
+  for (const p of places) {
+    fh += `<button class="route-btn" data-dir="from" data-place="${p}" onclick="pickRoute(this)">${PLACE_ICONS[p]} ${PLACE_LABELS[p]}</button>`;
+    th += `<button class="route-btn" data-dir="to" data-place="${p}" onclick="pickRoute(this)">${PLACE_ICONS[p]} ${PLACE_LABELS[p]}</button>`;
+  }
+  document.getElementById('routeFromCol').innerHTML = fh;
+  document.getElementById('routeToCol').innerHTML = th;
+}
+function pickRoute(btn) {
+  const dir=btn.dataset.dir, place=btn.dataset.place;
+  if(dir==='from') routeFrom=(routeFrom===place)?null:place; else routeTo=(routeTo===place)?null:place;
+  if(routeFrom&&routeTo&&routeFrom===routeTo){if(dir==='from')routeTo=null;else routeFrom=null;}
   updateRouteUI();
-  pushScreen('routeScreen');
+}
+function updateRouteUI() {
+  document.querySelectorAll('.route-btn').forEach(btn=>{
+    const dir=btn.dataset.dir, place=btn.dataset.place;
+    btn.classList.toggle('selected',(dir==='from'&&routeFrom===place)||(dir==='to'&&routeTo===place));
+    btn.classList.toggle('disabled',(dir==='from'&&routeTo===place)||(dir==='to'&&routeFrom===place));
+  });
+  document.getElementById('routeGoBtn').disabled=!(routeFrom&&routeTo);
+}
+async function executeRoute() {
+  if(!routeFrom||!routeTo)return;
+  setLastAction(executeRoute,[]);
+  document.getElementById('navTitle').textContent=`${PLACE_ICONS[routeFrom]} → ${PLACE_ICONS[routeTo]}`;
+  document.getElementById('navSubtitle').textContent=`${PLACE_LABELS[routeFrom]} to ${PLACE_LABELS[routeTo]}`;
+  pushScreen('resultsScreen');
+  const c=document.getElementById('resultsContainer'); c.innerHTML=showLoading();
+  try {
+    const all=await fetchBikeData();
+    const fc=config.stations[routeFrom], tc=config.stations[routeTo];
+    const fs=getGroup(all,fc.primary), ts=getGroup(all,tc.primary);
+    if(fs.every(s=>!s.data)&&ts.every(s=>!s.data)){c.innerHTML=showError('No data');return;}
+    const bt=THRESHOLDS.bikes,dt=THRESHOLDS.docks_arrive;
+    let h=renderTable(fs,`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} · picking up`,bt,999,false);
+    h+=renderTable(ts,`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} · dropping off`,999,dt,false);
+    if(needsBackup(fs,bt,999)&&fc.backup.length) h+=renderTable(getGroup(all,fc.backup),`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} backup · pick up`,bt,999,true);
+    if(needsBackup(ts,999,dt)&&tc.backup.length) h+=renderTable(getGroup(all,tc.backup),`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} backup · drop off`,999,dt,true);
+    c.innerHTML=h+renderFooter();
+  } catch(e){c.innerHTML=showError(e.message);}
 }
 
-function pickRoute(btn) {
-  const dir = btn.dataset.dir;
-  const place = btn.dataset.place;
+// ─── SETTINGS ───────────────────────────────────────────────
+let tflLocked=true;
+function showSettings() {
+  document.getElementById('navTitle').textContent='⚙️ Settings';
+  document.getElementById('navSubtitle').textContent='';
+  tflLocked=!!config.tflKey;
+  renderSettings(); pushScreen('settingsScreen');
+}
 
-  if (dir === 'from') routeFrom = (routeFrom === place) ? null : place;
-  else routeTo = (routeTo === place) ? null : place;
+function renderSettings() {
+  const sc = document.getElementById('settingsContainer');
+  let h = '';
 
-  // Prevent same origin and destination
-  if (routeFrom && routeTo && routeFrom === routeTo) {
-    if (dir === 'from') routeTo = null;
-    else routeFrom = null;
+  // Weather location
+  h += '<div class="section-label">Weather Location</div><div class="settings-field">';
+  h += '<select class="settings-select" id="weatherLocSelect" onchange="config.weatherLocation=this.value;saveConfig();loadWeather();">';
+  for (const loc of WEATHER_LOCATIONS) {
+    h += `<option value="${loc.id}" ${config.weatherLocation===loc.id?'selected':''}>${loc.name}</option>`;
+  }
+  h += '</select></div>';
+
+  // Show gym toggle
+  h += '<div class="section-label">Display</div>';
+  h += `<div class="toggle-row"><span class="toggle-label">Show Gym</span><label class="toggle-switch"><input type="checkbox" ${config.showGym?'checked':''} onchange="config.showGym=this.checked;saveConfig();renderHome();"><span class="toggle-slider"></span></label></div>`;
+  h += '<div class="settings-gap"></div>';
+
+  // Station editor for each place
+  const places = ['home','office','gym'];
+  h += '<div class="section-label">Stations</div>';
+  for (const place of places) {
+    h += `<div style="margin-bottom:20px">`;
+    h += `<div style="font-size:16px;font-weight:600;padding:0 4px 8px">${PLACE_ICONS[place]} ${PLACE_LABELS[place]} — Primary <span style="font-size:13px;color:var(--text-tertiary)">(${config.stations[place].primary.length}/4)</span></div>`;
+    h += renderStationList(place, 'primary');
+    h += `<div style="font-size:16px;font-weight:600;padding:12px 4px 8px 4px">${PLACE_ICONS[place]} ${PLACE_LABELS[place]} — Backup <span style="font-size:13px;color:var(--text-tertiary)">(${config.stations[place].backup.length}/4)</span></div>`;
+    h += renderStationList(place, 'backup');
+    h += `</div>`;
   }
 
-  updateRouteUI();
-}
+  // TfL API key
+  h += '<div class="section-label">TfL API Key</div><div class="settings-field"><div class="settings-input-row">';
+  h += '<input type="text" class="settings-input" id="tflKeyInput" placeholder="Paste your TfL API key">';
+  h += '<button class="lock-btn" id="tflLockBtn" onclick="toggleLock()" style="display:none">🔒</button>';
+  h += '</div><div class="settings-note">Free from <a href="https://api-portal.tfl.gov.uk/" target="_blank">api-portal.tfl.gov.uk</a> — raises rate limit 50 → 500 req/min.</div></div>';
+  h += '<button class="save-btn" id="saveKeyBtn" onclick="saveTflKey()">Save API Key</button>';
+  h += '<div class="settings-gap"></div>';
 
-function updateRouteUI() {
-  document.querySelectorAll('.route-btn').forEach(btn => {
-    const dir = btn.dataset.dir;
-    const place = btn.dataset.place;
-    const selected = (dir === 'from' && routeFrom === place) || (dir === 'to' && routeTo === place);
-    const otherSelected = (dir === 'from' && routeTo === place) || (dir === 'to' && routeFrom === place);
-    btn.classList.toggle('selected', selected);
-    btn.classList.toggle('disabled', otherSelected);
-  });
-  document.getElementById('routeGoBtn').disabled = !(routeFrom && routeTo);
-}
+  // Links and actions
+  h += '<div class="section-label">About</div>';
+  h += '<a class="link-row" href="https://github.com/quantum-jj/bikeapp" target="_blank">📂 View on GitHub</a>';
+  h += '<div class="settings-gap"></div>';
+  h += '<div class="section-label">Data</div>';
+  h += '<button class="danger-btn" onclick="resetApp()">Reset All Settings & Cache</button>';
+  h += `<div class="version-label">${APP_VERSION}</div>`;
 
-async function executeRoute() {
-  if (!routeFrom || !routeTo) return;
-  setLastAction(executeRoute, []);
-  document.getElementById('navTitle').textContent = `${PLACE_ICONS[routeFrom]} → ${PLACE_ICONS[routeTo]}`;
-  document.getElementById('navSubtitle').textContent = `${PLACE_NAMES[routeFrom]} to ${PLACE_NAMES[routeTo]}`;
-  pushScreen('resultsScreen');
-  const c = document.getElementById('resultsContainer');
-  c.innerHTML = showLoading();
-  try {
-    const all = await fetchAllStations();
-    const fs = getGroup(all, STATIONS[routeFrom].ids);
-    const ts = getGroup(all, STATIONS[routeTo].ids);
-    if (fs.every(s => !s.data) && ts.every(s => !s.data)) { c.innerHTML = showError('No data for these stations'); return; }
-    const bt = THRESHOLDS.bikes, dt = THRESHOLDS.docks_arrive;
-    let h = renderTable(fs, `${STATIONS[routeFrom].label} · picking up`, bt, 999, false);
-    h += renderTable(ts, `${STATIONS[routeTo].label} · dropping off`, 999, dt, false);
-    if (needsBackup(fs, bt, 999) && BACKUP[routeFrom])
-      h += renderTable(getGroup(all, BACKUP[routeFrom].ids), `${BACKUP[routeFrom].label} · pick up`, bt, 999, true);
-    if (needsBackup(ts, 999, dt) && BACKUP[routeTo])
-      h += renderTable(getGroup(all, BACKUP[routeTo].ids), `${BACKUP[routeTo].label} · drop off`, 999, dt, true);
-    c.innerHTML = h + renderFooter();
-  } catch(e) { c.innerHTML = showError(e.message); }
-}
+  sc.innerHTML = h;
 
-// ── Settings ────────────────────────────────────────────────
-let tflLocked = true;
-
-function showSettings() {
-  document.getElementById('navTitle').textContent = '⚙️ Settings';
-  document.getElementById('navSubtitle').textContent = '';
-  tflLocked = !!tflKey;
-  renderSettingsUI();
-  pushScreen('settingsScreen');
-}
-
-function renderSettingsUI() {
+  // Set TfL key state
   const input = document.getElementById('tflKeyInput');
   const lockBtn = document.getElementById('tflLockBtn');
-  const saveBtn = document.getElementById('saveBtn');
-
-  if (tflKey && tflLocked) {
-    // Show masked key, locked
-    input.value = '•'.repeat(Math.min(tflKey.length, 32));
-    input.disabled = true;
-    lockBtn.style.display = 'flex';
-    lockBtn.textContent = '🔒';
-    saveBtn.disabled = true;
+  const saveBtn = document.getElementById('saveKeyBtn');
+  if (config.tflKey && tflLocked) {
+    input.value = '•'.repeat(Math.min(config.tflKey.length,32)); input.disabled=true;
+    lockBtn.style.display='flex'; lockBtn.textContent='🔒'; saveBtn.disabled=true;
   } else {
-    // Editable
-    input.value = tflKey;
-    input.disabled = false;
-    lockBtn.style.display = tflKey ? 'flex' : 'none';
-    lockBtn.textContent = '🔓';
-    saveBtn.disabled = false;
-    if (!tflKey) lockBtn.style.display = 'none';
+    input.value=config.tflKey; input.disabled=false;
+    lockBtn.style.display=config.tflKey?'flex':'none'; lockBtn.textContent='🔓'; saveBtn.disabled=false;
   }
 }
 
-function toggleLock(type) {
-  if (type === 'tfl') {
-    tflLocked = !tflLocked;
-    renderSettingsUI();
-    if (!tflLocked) {
-      document.getElementById('tflKeyInput').focus();
+function renderStationList(place, type) {
+  const list = config.stations[place][type];
+  const min = type==='primary'?1:0;
+  const max = 4;
+  let h = '';
+  list.forEach(([id,name],i) => {
+    const shortName = name.split(',')[0];
+    h += `<div class="station-item">`;
+    h += `<span class="st-name">${shortName}</span>`;
+    if (i > 0) h += `<button onclick="moveStation('${place}','${type}',${i},-1)" title="Move up">↑</button>`;
+    else h += `<button style="visibility:hidden">↑</button>`;
+    if (i < list.length-1) h += `<button onclick="moveStation('${place}','${type}',${i},1)" title="Move down">↓</button>`;
+    else h += `<button style="visibility:hidden">↓</button>`;
+    if (list.length > min) h += `<button onclick="removeStation('${place}','${type}',${i})" style="color:var(--red)" title="Remove">✕</button>`;
+    else h += `<button style="visibility:hidden">✕</button>`;
+    h += `</div>`;
+  });
+  if (list.length < max) {
+    h += `<button class="add-station-btn" onclick="openStationModal('${place}','${type}')">+ Add Station</button>`;
+  }
+  return h;
+}
+
+function moveStation(place, type, index, dir) {
+  const list = config.stations[place][type];
+  const newIdx = index + dir;
+  if (newIdx < 0 || newIdx >= list.length) return;
+  [list[index], list[newIdx]] = [list[newIdx], list[index]];
+  saveConfig(); renderSettings();
+}
+
+function removeStation(place, type, index) {
+  config.stations[place][type].splice(index, 1);
+  saveConfig(); renderSettings();
+}
+
+// ─── STATION PICKER MODAL ───────────────────────────────────
+let _modalTarget = null; // { place, type }
+
+function openStationModal(place, type) {
+  _modalTarget = { place, type };
+  document.getElementById('modalTitle').textContent = `Add to ${PLACE_LABELS[place]} ${type}`;
+  document.getElementById('modalSearch').value = '';
+  renderModalList();
+  document.getElementById('stationModal').classList.add('active');
+}
+
+function closeStationModal() {
+  document.getElementById('stationModal').classList.remove('active');
+  _modalTarget = null;
+  renderSettings();
+}
+
+function getStationListData() {
+  // Use cached full station list, or return empty
+  if (_allStationsCache.data) return _allStationsCache.data;
+  return [];
+}
+
+function renderModalList(filter='') {
+  const list = document.getElementById('modalList');
+  const stations = getStationListData();
+  if (!stations.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary)">Loading station list… Try checking a location first to load data.</div>';
+    return;
+  }
+  const filterLower = filter.toLowerCase();
+  // Get IDs already in this group
+  const existingIds = new Set();
+  if (_modalTarget) {
+    config.stations[_modalTarget.place][_modalTarget.type].forEach(([id]) => existingIds.add(id));
+  }
+
+  // Group by area (second part of commonName after comma)
+  const groups = {};
+  for (const s of stations) {
+    const id = s.id.split('_')[1];
+    const name = s.commonName || '';
+    if (filterLower && !name.toLowerCase().includes(filterLower)) continue;
+    const parts = name.split(',');
+    const area = (parts[1] || 'Other').trim();
+    if (!groups[area]) groups[area] = [];
+    groups[area].push({ id, name, already: existingIds.has(id) });
+  }
+
+  const sortedAreas = Object.keys(groups).sort();
+  let h = '';
+  for (const area of sortedAreas) {
+    h += `<div class="modal-group-label">${area}</div>`;
+    for (const s of groups[area].sort((a,b) => a.name.localeCompare(b.name))) {
+      if (s.already) {
+        h += `<div class="modal-item already-added">${s.name.split(',')[0]} ✓</div>`;
+      } else {
+        h += `<div class="modal-item" onclick="addStationFromModal('${s.id}',\`${s.name.replace(/`/g,"'")}\`)">${s.name.split(',')[0]}</div>`;
+      }
     }
   }
+  list.innerHTML = h || '<div style="padding:20px;text-align:center;color:var(--text-tertiary)">No stations found</div>';
 }
 
-function saveSettings() {
-  const newKey = document.getElementById('tflKeyInput').value.trim();
-  tflKey = newKey;
-  try { localStorage.setItem('tfl_api_key', tflKey); } catch(e) {}
-  _cache = { data: null, ts: 0 };
-  tflLocked = !!tflKey;
-  renderSettingsUI();
+function filterModalList() {
+  renderModalList(document.getElementById('modalSearch').value);
 }
 
-// ── Init ────────────────────────────────────────────────────
+function addStationFromModal(id, name) {
+  if (!_modalTarget) return;
+  const list = config.stations[_modalTarget.place][_modalTarget.type];
+  if (list.length >= 4) return;
+  if (list.some(([sid]) => sid === id)) return;
+  list.push([id, name]);
+  saveConfig();
+  renderModalList(document.getElementById('modalSearch').value);
+}
+
+// ─── SETTINGS ACTIONS ───────────────────────────────────────
+function toggleLock() {
+  tflLocked = !tflLocked;
+  const input=document.getElementById('tflKeyInput'), lockBtn=document.getElementById('tflLockBtn'), saveBtn=document.getElementById('saveKeyBtn');
+  if (tflLocked) {
+    input.value='•'.repeat(Math.min(config.tflKey.length,32)); input.disabled=true;
+    lockBtn.textContent='🔒'; saveBtn.disabled=true;
+  } else {
+    input.value=config.tflKey; input.disabled=false;
+    lockBtn.textContent='🔓'; saveBtn.disabled=false; input.focus();
+  }
+}
+
+function saveTflKey() {
+  config.tflKey = document.getElementById('tflKeyInput').value.trim();
+  saveConfig(); _bikeCache={data:null,ts:0};
+  tflLocked=!!config.tflKey;
+  const input=document.getElementById('tflKeyInput'), lockBtn=document.getElementById('tflLockBtn'), saveBtn=document.getElementById('saveKeyBtn');
+  if (config.tflKey) {
+    input.value='•'.repeat(Math.min(config.tflKey.length,32)); input.disabled=true;
+    lockBtn.style.display='flex'; lockBtn.textContent='🔒'; saveBtn.disabled=true;
+  }
+}
+
+function resetApp() {
+  if (!confirm('Reset all settings to defaults? This will clear your custom stations, API key, and cached data.')) return;
+  try { localStorage.removeItem('bike_config'); localStorage.removeItem('tfl_api_key'); } catch(e){}
+  _bikeCache={data:null,ts:0}; _allStationsCache={data:null,ts:0};
+  config = JSON.parse(JSON.stringify(DEFAULTS));
+  goHome(); loadWeather();
+}
+
+// ─── INIT ───────────────────────────────────────────────────
+renderHome();
 loadWeather();
 </script>
 </body>
