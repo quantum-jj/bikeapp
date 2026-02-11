@@ -1,137 +1,99 @@
 # 🚲 Bike Checker
 
-A minimalist iOS-style web app for checking bike availability at London cycle hire stations. Built as a personal tool for the developer.
+A minimalist iOS-style web app for checking Santander Cycles bike availability in London. Built as a single self-contained HTML file — no build tools, no frameworks, no dependencies.
 
-## ⚠️ Important Note
-
-**This app is customized specifically for my personal use** with hardcoded stations. If you want to use this code, you'll need to customize it for your own locations and bike share system.
+**[Live App](https://quantum-jj.github.io/bikeapp)** · v1.1.0
 
 ## Features
 
-- **Weather Widget**: Real-time weather display with temperature, conditions, and wind information
-- **Location Checker**: Quick view of bike/dock availability at favorite locations (home, work, etc.)
-- **Route Planner**: Check availability at both pickup and dropoff stations for planned routes
-- **Backup Stations**: Automatically shows nearby alternative stations when availability is low
-- **iOS-Style UI**: Native app feel with dark mode and iOS design patterns
-- **PWA Support**: Installable as a standalone app on iOS/Android
-
-## Screenshots
-
-The app features:
-- Clean, card-based interface
-- Real-time station data with color-coded availability (green/yellow/red)
-- Simple route planning with start/destination picker
-- Weather integration
-- Settings panel for TfL API key (app will still work without need for TfL API key, just may hit rate limits)
+- **Weather Widget**: Real-time weather with temperature, feels-like, wind, humidity, and AQI from Open-Meteo (no API key needed)
+- **Severe Weather Warnings**: Automatically shows alerts for extreme cold, heat, high winds, or heavy rain/thunderstorms
+- **Location Checker**: Quick view of bike/dock availability at your saved locations (Home, Office, Gym)
+- **Route Planner**: Interactive From/To picker to check availability at both pickup and dropoff stations
+- **Smart Backup Stations**: Automatically shows nearby alternatives only when main stations are low or empty
+- **Customisable Stations**: Add, remove, and reorder primary and backup stations for each location from the settings menu
+- **Customisable Weather Location**: Choose from 20 London areas for your weather data
+- **iOS-Style UI**: Native dark mode app feel with `-apple-system` font, backdrop blur nav bar, and grouped list cells
+- **PWA Support**: Add to Home Screen on iOS for a full-screen standalone app experience
 
 ## How It Works
 
-The app fetches real-time data from the Transport for London (TfL) BikePoint API and displays:
-- 🚲 Regular bikes available
-- ⚡ E-bikes available  
-- 📍 Empty docks available
+The app makes a single API call to fetch all ~800 Santander Cycles stations, then filters locally for your saved stations. Data is cached for 30 seconds to avoid rate limiting.
 
-Availability is color-coded:
+Availability is colour-coded:
 - 🟢 **Green**: Good availability
-- 🟡 **Yellow**: Low availability
+- 🟡 **Yellow**: Low availability (≤3 bikes when leaving, ≤5 docks when arriving)
 - 🔴 **Red**: Empty/unavailable
 
-## Customization Required
+Backup stations only appear when your primary stations are low or empty.
 
-To use this for yourself, you'll need to modify:
+## Quick Start
 
-### 1. Station IDs
-Update the `STATIONS` and `BACKUP` objects (around line 233-321) with your preferred stations:
+### Hosted (recommended)
+1. Visit the [live app](https://quantum-jj.github.io/bikeapp)
+2. On iOS: tap Share → Add to Home Screen
+3. Launch from your home screen like a native app
 
-```javascript
-const STATIONS = {
-  home: {
-    label: 'Your Location Name',
-    ids: {
-      'BikePoints_123': 'Station Name 1',
-      'BikePoints_456': 'Station Name 2'
-      // Add your stations
-    }
-  },
-  // ... add more locations
-};
-```
+### Self-hosted
+1. Fork/clone this repo
+2. Enable GitHub Pages (Settings → Pages → Source: main branch)
+3. Open your `username.github.io/bikeapp` URL
+4. Add to Home Screen
 
-### 2. Find Station IDs
-Get BikePoint IDs from the TfL API:
-- API endpoint: `https://api.tfl.gov.uk/BikePoint`
-- Find stations near your locations
-- Note the `id` field (e.g., `BikePoints_123`)
+## Customisation
 
-### 3. Place Names & Icons
-Update the `PLACE_NAMES` and `PLACE_ICONS` objects (around line 323-335) to match your locations.
+All customisation is done through the in-app Settings menu (⚙️):
 
-### 4. Weather Location
-Update the weather coordinates in `loadWeather()` (around line 471):
+- **Weather Location**: Choose from 20 London areas
+- **Stations**: Add/remove/reorder stations in each location group (Home, Office, Gym) by searching from the full TfL station list
+- **Show/Hide Gym**: Toggle the Gym location on or off
+- **TfL API Key**: Optional — raises rate limit from 50 to 500 requests/min. Get a free key from [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/)
+- **Reset**: Clear all settings and return to defaults
 
-```javascript
-async function loadWeather() {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=YOUR_LAT&longitude=YOUR_LON...`;
-  // ...
-}
-```
+### Station Limits
 
-### 5. Thresholds (Optional)
-Adjust availability thresholds in the `THRESHOLDS` object (around line 337):
+| Type | Min | Max |
+|------|-----|-----|
+| Primary stations | 1 | 4 |
+| Backup stations | 0 | 4 |
 
-```javascript
-const THRESHOLDS = {
-  bikes: 2,          // Warn when ≤2 bikes
-  docks_arrive: 2,   // Warn when ≤2 docks
-  location: 2        // General location threshold
-};
-```
+## APIs Used
 
-## API Key Setup
-
-The app uses the public TfL API. For better rate limits:
-
-1. Get a free API key from [TfL API Portal](https://api-portal.tfl.gov.uk/)
-2. In the app, tap ⚙️ Settings
-3. Enter your API key
-4. Tap Save
-
-## Installation
-
-### As a Web App
-1. Open `index.html` in a web browser
-2. Done! (works offline after first load)
-
-### As a PWA (iOS)
-1. Open in Safari
-2. Tap the Share button
-3. Tap "Add to Home Screen"
-4. Launch from your home screen like a native app
+| API | Purpose | Key Required |
+|-----|---------|:---:|
+| [TfL BikePoint](https://api.tfl.gov.uk/) | Bike/dock availability | Optional (recommended) |
+| [Open-Meteo Weather](https://open-meteo.com/) | Temperature, wind, conditions | No |
+| [Open-Meteo Air Quality](https://open-meteo.com/) | European AQI | No |
 
 ## Tech Stack
 
-- Vanilla JavaScript (no dependencies)
-- TfL BikePoint API
-- Open-Meteo Weather API
-- LocalStorage for settings
+- Vanilla JavaScript (zero dependencies)
+- Single `index.html` file (~750 lines)
 - CSS Variables for theming
-- Progressive Web App capabilities
+- localStorage for settings persistence
+- Progressive Web App manifest (inline base64)
 
 ## Browser Support
 
-Optimized for:
-- Safari (iOS/macOS)
+Optimised for:
+- Safari (iOS/macOS) — primary target
 - Chrome (Android/Desktop)
+- Edge
 - Other modern browsers with CSS Grid and Custom Properties support
+
+## Known Quirks
+
+- **Safari standalone mode**: Safari's Intelligent Tracking Prevention (ITP) can sometimes block cross-origin API calls in PWA mode. If the app shows "Load failed", try clearing Safari website data for the GitHub Pages domain and `api.tfl.gov.uk`
+- **Rate limiting**: Without an API key, TfL limits you to ~50 requests per minute. The app batches all stations into a single request and caches for 30s, but rapid repeated taps can still hit the limit
 
 ## License
 
-This is a personal hobby project. Feel free to use the code however you like, but remember you'll need to customize it for your own use case.
+This is a personal hobby project. Feel free to use the code however you like.
 
 ## Contributing
 
-This is primarily a personal project, but if you have suggestions or improvements, feel free to open an issue or PR!
+Suggestions and improvements welcome — feel free to open an issue or PR!
 
 ---
 
-**Note**: This app is not affiliated with Transport for London or Santander Cycles. It simply uses publicly available API data.
+**Note**: This app is not affiliated with Transport for London or Santander Cycles. It uses publicly available API data.
