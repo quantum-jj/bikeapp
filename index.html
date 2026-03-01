@@ -79,13 +79,29 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Tex
 .results-header { font-size:15px; font-weight:600; color:var(--text-secondary); padding:0 4px 10px; display:flex; align-items:center; gap:6px; }
 .results-header .badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; background:rgba(255,69,58,0.15); color:var(--red); text-transform:uppercase; letter-spacing:0.03em; }
 .results-table { background:var(--bg-card); border-radius:var(--radius); overflow:hidden; }
-.table-header { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:10px 14px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; border-bottom:0.5px solid var(--separator); }
+.table-header { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:10px 8px 10px 14px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; border-bottom:0.5px solid var(--separator); }
 .table-header span:not(:first-child) { text-align:center; }
-.table-row { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
+.table-row { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:13px 8px 13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
 .table-row:last-child { border-bottom:none; }
 .table-row .station-name { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
 .table-row .val { text-align:center; font-weight:600; font-variant-numeric:tabular-nums; font-size:16px; }
 .val.good { color:var(--green); } .val.low { color:var(--yellow); } .val.empty { color:var(--red); } .val.muted { color:var(--text-tertiary); font-weight:400; }
+/* Column highlighting — background-image fills full row height. right padding=8px, each col=52px.
+   📍 col: right 8px → 60px | 🔋⚡ col: right 60px → 112px | 🚲 col: right 112px → 164px */
+.results-table.hl-from .table-header,
+.results-table.hl-from .table-row {
+  background-image:linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07));
+  background-size:52px 100%,52px 100%;
+  background-position:right 60px top,right 112px top;
+  background-repeat:no-repeat;
+}
+.results-table.hl-to .table-header,
+.results-table.hl-to .table-row {
+  background-image:linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07));
+  background-size:52px 100%;
+  background-position:right 8px top;
+  background-repeat:no-repeat;
+}
 
 .loading-container { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 0; gap:14px; }
 .spinner { width:28px; height:28px; border:3px solid var(--text-tertiary); border-top-color:var(--text-primary); border-radius:50%; animation:spin 0.7s linear infinite; }
@@ -231,7 +247,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Tex
 
 <script>
 // ─── VERSION ────────────────────────────────────────────────
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.2.0';
 
 // ─── DEFAULTS ───────────────────────────────────────────────
 const DEFAULTS = {
@@ -321,7 +337,11 @@ async function fetchBikeData() {
     const id = station.id.split('_')[1];
     if (!myIds.has(id)) continue;
     const get = k => { const p = station.additionalProperties?.find(x => x.key === k); return p ? parseInt(p.value,10)||0 : 0; };
-    indexed[id] = { bikes:get('NbStandardBikes'), ebikes:get('NbEBikes'), empty:get('NbEmptyDocks'), total:get('NbDocks') };
+    const ebikeTotal = get('NbEBikes');
+    // NbEBikesCharged = adequately charged eBikes (≥20% battery) — experimental TfL field
+    const _chargedProp = station.additionalProperties?.find(x => x.key === 'NbEBikesCharged');
+    const ebikeCharged = _chargedProp ? (parseInt(_chargedProp.value,10)||0) : ebikeTotal;
+    indexed[id] = { bikes:get('NbStandardBikes'), ebikeCharged, ebikeTotal, empty:get('NbEmptyDocks'), total:get('NbDocks') };
   }
   _bikeCache = { data:indexed, ts:now };
   return indexed;
@@ -425,19 +445,36 @@ function renderHome() {
 
 // ─── RENDER RESULTS ─────────────────────────────────────────
 function colorClass(v,t) { return v===0?'empty':v<=t?'low':'good'; }
-function renderTable(stations, label, bt, dt, isBackup) {
+function renderTable(stations, label, bt, dt, isBackup, role) {
+  // role: 'from'/'location' → highlight bikes+ebikes cols; 'to' → highlight empty col
+  const isTo = role === 'to';
+  const tableClass = isTo ? 'hl-to' : 'hl-from';
   const badge = isBackup ? ' <span class="badge">backup</span>' : '';
-  let h = `<div class="results-section"><div class="results-header">${label}${badge}</div><div class="results-table"><div class="table-header"><span>Station</span><span>🚲</span><span>⚡</span><span>📍</span></div>`;
+  let h = `<div class="results-section"><div class="results-header">${label}${badge}</div><div class="results-table ${tableClass}"><div class="table-header"><span>Station</span><span>🚲</span><span>🔋⚡</span><span>📍</span></div>`;
   for (const s of stations) {
-    if (!s.data) h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
-    else h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val ${colorClass(s.data.bikes,bt)}">${s.data.bikes}</div><div class="val muted">${s.data.ebikes}</div><div class="val ${colorClass(s.data.empty,dt)}">${s.data.empty}</div></div>`;
+    if (!s.data) {
+      h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
+    } else {
+      const bikeClass = colorClass(s.data.bikes, bt);
+      const dockClass = colorClass(s.data.empty, dt);
+      let ebikeCell;
+      if (isTo) {
+        // destination: grey/muted, no bold — both numbers
+        ebikeCell = `<div class="val muted">${s.data.ebikeCharged}/${s.data.ebikeTotal}</div>`;
+      } else {
+        // from/location: charged count takes colour+weight of bikes col; /total stays grey
+        const eClass = colorClass(s.data.ebikeCharged, bt);
+        ebikeCell = `<div class="val"><span class="${eClass}">${s.data.ebikeCharged}</span><span style="color:var(--text-tertiary);font-weight:400">/${s.data.ebikeTotal}</span></div>`;
+      }
+      h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val ${bikeClass}">${s.data.bikes}</div>${ebikeCell}<div class="val ${dockClass}">${s.data.empty}</div></div>`;
+    }
   }
   return h + '</div></div>';
 }
 function needsBackup(stations,bt,dt) { return stations.some(s => !s.data||(bt<900&&s.data.bikes<=bt)||(dt<900&&s.data.empty<=dt)); }
 function renderFooter() {
   const n = new Date();
-  return `<div class="legend"><span><span class="legend-dot" style="background:var(--green)"></span> Good</span><span><span class="legend-dot" style="background:var(--yellow)"></span> Low</span><span><span class="legend-dot" style="background:var(--red)"></span> Empty</span></div><div class="timestamp">Updated ${n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} · ${n.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})}</div><div class="timestamp" style="padding-top:2px">🚲 bikes · ⚡ e-bikes · 📍 empty docks</div>`;
+  return `<div class="legend"><span><span class="legend-dot" style="background:var(--green)"></span> Good</span><span><span class="legend-dot" style="background:var(--yellow)"></span> Low</span><span><span class="legend-dot" style="background:var(--red)"></span> Empty</span></div><div class="timestamp">Updated ${n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} · ${n.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})}</div><div class="timestamp" style="padding-top:2px">🚲 bikes · 🔋⚡ charged/total e-bikes · 📍 empty docks</div>`;
 }
 function showLoading() { return '<div class="loading-container"><div class="spinner"></div><div class="loading-text">Checking stations…</div></div>'; }
 function showError(detail) {
@@ -472,9 +509,9 @@ async function checkLocation(place) {
     const st = getGroup(all, cfg.primary);
     if (st.every(s=>!s.data)) { c.innerHTML=showError('No data for these stations'); return; }
     const t=THRESHOLDS.location;
-    let h = renderTable(st, `${PLACE_ICONS[place]} ${PLACE_LABELS[place]}`, t, t, false);
+    let h = renderTable(st, `${PLACE_ICONS[place]} ${PLACE_LABELS[place]}`, t, t, false, 'location');
     if (needsBackup(st,t,t) && cfg.backup.length)
-      h += renderTable(getGroup(all,cfg.backup), `${PLACE_ICONS[place]} ${PLACE_LABELS[place]} backup`, t, t, true);
+      h += renderTable(getGroup(all,cfg.backup), `${PLACE_ICONS[place]} ${PLACE_LABELS[place]} backup`, t, t, true, 'location');
     c.innerHTML = h + renderFooter();
   } catch(e) { c.innerHTML=showError(e.message); }
 }
@@ -525,10 +562,10 @@ async function executeRoute() {
     const fs=getGroup(all,fc.primary), ts=getGroup(all,tc.primary);
     if(fs.every(s=>!s.data)&&ts.every(s=>!s.data)){c.innerHTML=showError('No data');return;}
     const bt=THRESHOLDS.bikes,dt=THRESHOLDS.docks_arrive;
-    let h=renderTable(fs,`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} · picking up`,bt,999,false);
-    h+=renderTable(ts,`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} · dropping off`,999,dt,false);
-    if(needsBackup(fs,bt,999)&&fc.backup.length) h+=renderTable(getGroup(all,fc.backup),`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} backup · pick up`,bt,999,true);
-    if(needsBackup(ts,999,dt)&&tc.backup.length) h+=renderTable(getGroup(all,tc.backup),`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} backup · drop off`,999,dt,true);
+    let h=renderTable(fs,`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} · picking up`,bt,999,false,'from');
+    h+=renderTable(ts,`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} · dropping off`,999,dt,false,'to');
+    if(needsBackup(fs,bt,999)&&fc.backup.length) h+=renderTable(getGroup(all,fc.backup),`${PLACE_ICONS[routeFrom]} ${PLACE_LABELS[routeFrom]} backup · pick up`,bt,999,true,'from');
+    if(needsBackup(ts,999,dt)&&tc.backup.length) h+=renderTable(getGroup(all,tc.backup),`${PLACE_ICONS[routeTo]} ${PLACE_LABELS[routeTo]} backup · drop off`,999,dt,true,'to');
     c.innerHTML=h+renderFooter();
   } catch(e){c.innerHTML=showError(e.message);}
 }
