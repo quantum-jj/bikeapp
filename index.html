@@ -79,26 +79,26 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Tex
 .results-header { font-size:15px; font-weight:600; color:var(--text-secondary); padding:0 4px 10px; display:flex; align-items:center; gap:6px; }
 .results-header .badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; background:rgba(255,69,58,0.15); color:var(--red); text-transform:uppercase; letter-spacing:0.03em; }
 .results-table { background:var(--bg-card); border-radius:var(--radius); overflow:hidden; }
-.table-header { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:10px 0 10px 14px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; border-bottom:0.5px solid var(--separator); }
+.table-header { display:grid; grid-template-columns:1fr 57px 57px 57px; padding:10px 0 10px 14px; font-size:12px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em; border-bottom:0.5px solid var(--separator); }
 .table-header span:not(:first-child) { text-align:center; }
-.table-row { display:grid; grid-template-columns:1fr 52px 52px 52px; padding:13px 0 13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
+.table-row { display:grid; grid-template-columns:1fr 57px 57px 57px; padding:13px 0 13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
 .table-row:last-child { border-bottom:none; }
 .table-row .station-name { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
 .table-row .val { text-align:center; font-weight:600; font-variant-numeric:tabular-nums; font-size:16px; }
 .val.good { color:var(--green); } .val.low { color:var(--yellow); } .val.empty { color:var(--red); } .val.muted { color:var(--text-tertiary); font-weight:400; }
-/* Column highlighting — background-image fills full row height. right padding=0, each col=52px.
-   📍 col: right 0 → 52px | 🔋⚡ col: right 52px → 104px | 🚲 col: right 104px → 156px */
+/* Column highlighting — background-image fills full row height. right padding=0, each col=57px.
+   📍 col: right 0 → 57px | 🔋⚡ col: right 57px → 114px | 🚲 col: right 114px → 171px */
 .results-table.hl-from .table-header,
 .results-table.hl-from .table-row {
   background-image:linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07)),linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07));
-  background-size:52px 100%,52px 100%;
-  background-position:right 52px top,right 104px top;
+  background-size:57px 100%,57px 100%;
+  background-position:right 57px top,right 114px top;
   background-repeat:no-repeat;
 }
 .results-table.hl-to .table-header,
 .results-table.hl-to .table-row {
   background-image:linear-gradient(rgba(255,255,255,0.07),rgba(255,255,255,0.07));
-  background-size:52px 100%;
+  background-size:57px 100%;
   background-position:right 0 top;
   background-repeat:no-repeat;
 }
