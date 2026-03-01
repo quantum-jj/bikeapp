@@ -446,9 +446,12 @@ function renderHome() {
 // ─── RENDER RESULTS ─────────────────────────────────────────
 function colorClass(v,t) { return v===0?'empty':v<=t?'low':'good'; }
 function renderTable(stations, label, bt, dt, isBackup, role) {
-  // role: 'from'/'location' → highlight bikes+ebikes cols; 'to' → highlight empty col
-  const isTo = role === 'to';
-  const tableClass = isTo ? 'hl-to' : 'hl-from';
+  // role: 'from' → highlight bikes+ebikes, mute docks
+  //        'to'  → highlight docks, mute bikes+ebikes
+  //        'location' → no highlight, no muting (direction unknown)
+  const isFrom = role === 'from';
+  const isTo   = role === 'to';
+  const tableClass = isFrom ? 'hl-from' : isTo ? 'hl-to' : '';
   const badge = isBackup ? ' <span class="badge">backup</span>' : '';
   let h = `<div class="results-section"><div class="results-header">${label}${badge}</div><div class="results-table ${tableClass}"><div class="table-header"><span>Station</span><span>🚲</span><span>🔋⚡</span><span>📍</span></div>`;
   for (const s of stations) {
@@ -457,16 +460,27 @@ function renderTable(stations, label, bt, dt, isBackup, role) {
     } else {
       const bikeClass = colorClass(s.data.bikes, bt);
       const dockClass = colorClass(s.data.empty, dt);
+
+      // Bikes: muted for 'to', coloured otherwise
+      const bikeCell = isTo
+        ? `<div class="val muted">${s.data.bikes}</div>`
+        : `<div class="val ${bikeClass}">${s.data.bikes}</div>`;
+
+      // eBikes: muted for 'to', coloured charged+grey total otherwise
       let ebikeCell;
       if (isTo) {
-        // destination: grey/muted, no bold — both numbers
         ebikeCell = `<div class="val muted">${s.data.ebikeCharged}/${s.data.ebikeTotal}</div>`;
       } else {
-        // from/location: charged count takes colour+weight of bikes col; /total stays grey
         const eClass = colorClass(s.data.ebikeCharged, bt);
         ebikeCell = `<div class="val"><span class="${eClass}">${s.data.ebikeCharged}</span><span style="color:var(--text-tertiary);font-weight:400">/${s.data.ebikeTotal}</span></div>`;
       }
-      h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val ${bikeClass}">${s.data.bikes}</div>${ebikeCell}<div class="val ${dockClass}">${s.data.empty}</div></div>`;
+
+      // Empty docks: muted for 'from', coloured otherwise
+      const dockCell = isFrom
+        ? `<div class="val muted">${s.data.empty}</div>`
+        : `<div class="val ${dockClass}">${s.data.empty}</div>`;
+
+      h += `<div class="table-row"><div class="station-name">${s.name}</div>${bikeCell}${ebikeCell}${dockCell}</div>`;
     }
   }
   return h + '</div></div>';
