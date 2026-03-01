@@ -83,7 +83,10 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Tex
 .table-header span:not(:first-child) { text-align:center; }
 .table-row { display:grid; grid-template-columns:1fr 57px 57px 57px; padding:13px 0 13px 14px; align-items:center; border-bottom:0.5px solid var(--separator); font-size:15px; }
 .table-row:last-child { border-bottom:none; }
-.table-row .station-name { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
+.table-row .station-name { font-weight:500; display:flex; align-items:center; gap:6px; min-width:0; padding-right:6px; }
+.stn-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stn-map { flex-shrink:0; font-size:13px; text-decoration:none; opacity:0.4; line-height:1; }
+.stn-map:active { opacity:0.8; }
 .table-row .val { text-align:center; font-weight:600; font-variant-numeric:tabular-nums; font-size:16px; }
 .val.good { color:var(--green); } .val.low { color:var(--yellow); } .val.empty { color:var(--red); } .val.muted { color:var(--text-tertiary); font-weight:400; }
 /* Column highlighting — background-image fills full row height. right padding=0, each col=57px.
@@ -247,7 +250,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Tex
 
 <script>
 // ─── VERSION ────────────────────────────────────────────────
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.3.0';
 
 // ─── DEFAULTS ───────────────────────────────────────────────
 const DEFAULTS = {
@@ -341,7 +344,7 @@ async function fetchBikeData() {
     // NbEBikesCharged = adequately charged eBikes (≥20% battery) — experimental TfL field
     const _chargedProp = station.additionalProperties?.find(x => x.key === 'NbEBikesCharged');
     const ebikeCharged = _chargedProp ? (parseInt(_chargedProp.value,10)||0) : ebikeTotal;
-    indexed[id] = { bikes:get('NbStandardBikes'), ebikeCharged, ebikeTotal, empty:get('NbEmptyDocks'), total:get('NbDocks') };
+    indexed[id] = { bikes:get('NbStandardBikes'), ebikeCharged, ebikeTotal, empty:get('NbEmptyDocks'), total:get('NbDocks'), lat:station.lat, lon:station.lon };
   }
   _bikeCache = { data:indexed, ts:now };
   return indexed;
@@ -455,8 +458,11 @@ function renderTable(stations, label, bt, dt, isBackup, role) {
   const badge = isBackup ? ' <span class="badge">backup</span>' : '';
   let h = `<div class="results-section"><div class="results-header">${label}${badge}</div><div class="results-table ${tableClass}"><div class="table-header"><span>Station</span><span>🚲</span><span>🔋⚡</span><span>📍</span></div>`;
   for (const s of stations) {
+    const mapLink = s.data?.lat
+      ? `<a class="stn-map" href="https://maps.google.com/?q=${s.data.lat},${s.data.lon}" target="_blank" onclick="event.stopPropagation()">🔗</a>`
+      : '';
     if (!s.data) {
-      h += `<div class="table-row"><div class="station-name">${s.name}</div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
+      h += `<div class="table-row"><div class="station-name"><span class="stn-text">${s.name}</span></div><div class="val muted">—</div><div class="val muted">—</div><div class="val muted">—</div></div>`;
     } else {
       const bikeClass = colorClass(s.data.bikes, bt);
       const dockClass = colorClass(s.data.empty, dt);
@@ -480,7 +486,7 @@ function renderTable(stations, label, bt, dt, isBackup, role) {
         ? `<div class="val muted">${s.data.empty}</div>`
         : `<div class="val ${dockClass}">${s.data.empty}</div>`;
 
-      h += `<div class="table-row"><div class="station-name">${s.name}</div>${bikeCell}${ebikeCell}${dockCell}</div>`;
+      h += `<div class="table-row"><div class="station-name"><span class="stn-text">${s.name}</span>${mapLink}</div>${bikeCell}${ebikeCell}${dockCell}</div>`;
     }
   }
   return h + '</div></div>';
