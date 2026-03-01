@@ -2,16 +2,18 @@
 
 A minimalist iOS-style web app for checking Santander Cycles bike availability in London. Built as a single self-contained HTML file — no build tools, no frameworks, no dependencies.
 
-**[Live App](https://quantum-jj.github.io/bikeapp)** · v1.1.0
+**[Live App](https://quantum-jj.github.io/bikeapp)** · v1.3.0
 
 ## Features
 
 - **Weather Widget**: Real-time weather with temperature, feels-like, wind, humidity, and AQI from Open-Meteo (no API key needed)
 - **Severe Weather Warnings**: Automatically shows alerts for extreme cold, heat, high winds, or heavy rain/thunderstorms
 - **Location Checker**: Quick view of bike/dock availability at your saved locations (Home, Office, Gym)
-- **Route Planner**: Interactive From/To picker to check availability at both pickup and dropoff stations
+- **Route Planner**: Interactive From/To picker with column highlighting — bikes/eBikes emphasised at pickup stations, empty docks at drop-off stations; non-relevant columns are muted
 - **Smart Backup Stations**: Automatically shows nearby alternatives only when main stations are low or empty
-- **Customisable Stations**: Add, remove, and reorder primary and backup stations for each location from the settings menu
+- **eBike Display**: Shows charged/total eBikes (🔋⚡) per station — charged count colour-coded like standard bikes; uses TfL's `NbEBikesCharged` field where available, falls back to total
+- **Station Map Links**: Each station row has a 🔗 link that opens Google Maps at that station's exact location (native Maps app on mobile, web on desktop)
+- **Customisable Stations**: Add, remove, and reorder primary and backup stations for each location via the settings menu — reorder by drag-and-drop (grip handle) on both desktop and mobile
 - **Customisable Weather Location**: Choose from 20 London areas for your weather data
 - **iOS-Style UI**: Native dark mode app feel with `-apple-system` font, backdrop blur nav bar, and grouped list cells
 - **PWA Support**: Add to Home Screen on iOS for a full-screen standalone app experience
@@ -45,7 +47,7 @@ Backup stations only appear when your primary stations are low or empty.
 All customisation is done through the in-app Settings menu (⚙️):
 
 - **Weather Location**: Choose from 20 London areas
-- **Stations**: Add/remove/reorder stations in each location group (Home, Office, Gym) by searching from the full TfL station list
+- **Stations**: Add, remove, and drag-to-reorder stations in each location group (Home, Office, Gym) by searching from the full TfL station list
 - **Show/Hide Gym**: Toggle the Gym location on or off
 - **TfL API Key**: Optional — raises rate limit from 50 to 500 requests/min. Get a free key from [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/)
 - **Reset**: Clear all settings and return to defaults
@@ -61,14 +63,14 @@ All customisation is done through the in-app Settings menu (⚙️):
 
 | API | Purpose | Key Required |
 |-----|---------|:---:|
-| [TfL BikePoint](https://api.tfl.gov.uk/) | Bike/dock availability | Optional (recommended) |
+| [TfL BikePoint](https://api.tfl.gov.uk/) | Bike/dock availability, station coordinates | Optional (recommended) |
 | [Open-Meteo Weather](https://open-meteo.com/) | Temperature, wind, conditions | No |
 | [Open-Meteo Air Quality](https://open-meteo.com/) | European AQI | No |
 
 ## Tech Stack
 
 - Vanilla JavaScript (zero dependencies)
-- Single `index.html` file (~750 lines)
+- Single `index.html` file (~870 lines)
 - CSS Variables for theming
 - localStorage for settings persistence
 - Progressive Web App manifest (inline base64)
@@ -85,6 +87,7 @@ Optimised for:
 
 - **Safari standalone mode**: Safari's Intelligent Tracking Prevention (ITP) can sometimes block cross-origin API calls in PWA mode. If the app shows "Load failed", try clearing Safari website data for the GitHub Pages domain and `api.tfl.gov.uk`
 - **Rate limiting**: Without an API key, TfL limits you to ~50 requests per minute. The app batches all stations into a single request and caches for 30s, but rapid repeated taps can still hit the limit
+- **eBike charge data**: The charged/total eBike split relies on TfL's `NbEBikesCharged` field, which may not be populated for all stations — the app falls back to showing total/total in that case
 
 ## License
 
